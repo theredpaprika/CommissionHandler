@@ -1,0 +1,103 @@
+
+:root {
+    --primary-colour: #2c2c2c;
+    --secondary-colour: #f0f0f0;
+    --tertiary-colour: #e6e6e6;
+    --accent-colour: #bd0f06;
+    --second-accent-colour: #70a8a3;
+    --background-colour: #f7fafc;
+    --text-colour: #111111;
+    --active-colour: #aa0904;
+    --light-text: #ffffff;
+
+}
+
+
+.nav-link {
+    font-weight: bold;
+    color: var(--light-text);
+}
+
+body {
+    font-family: 'Ubuntu', 'Liberation Sans', 'DejaVu Sans', sans-serif;
+    background-color: var(--background-colour);
+}
+
+h1 {
+    font-family: 'Ubuntu', 'Liberation Sans', 'DejaVu Sans', sans-serif;
+    font-weight: normal;
+}
+
+h2 {
+    font-family: 'Ubuntu', 'Liberation Sans', 'DejaVu Sans', sans-serif;
+    font-weight: normal;
+}
+
+table {
+    border: 2px solid black;
+    border-spacing: 0;
+    border-collapse: separate;
+    background-color: var(--secondary-colour);
+    padding: 0px 0px;
+    margin: 12px 0px;
+    border-radius: 6px;
+}
+
+th {
+    justify-content: left;
+    font-weight: bold;
+    padding: 3px 6px;
+    background-color: var(--accent-colour);
+    color: var(--light-text);
+}
+
+th > a {
+    color: var(--light-text);
+}
+
+tr {
+    margin: 0px 0px;
+}
+
+tr:hover {
+    background-color: var(--second-accent-colour);
+    color: var(--text-colour);
+    cursor: pointer;
+}
+
+td {
+    margin: 0px 0px;
+    padding: 6px 6px;
+}
+
+.header-list-group {
+    display: flex;
+    border: 2px solid var(--primary-colour);
+    background-color: var(--accent-colour);
+    list-style-type: none;
+    border-radius: 6px
+}
+
+.header-list-group-item {
+    padding: 10px;
+    justify-content: center;
+    color: var(--light-text);
+}
+
+button, .button-style {
+    background-color: var(--secondary-colour);
+    border: 2px solid ;
+    border-color: var(--primary-colour);
+    color: var(--text-colour);
+    padding: 8px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    border-radius: 6px; /* Rounded corners */
+}
+
+input, select {
+    font-size:16px;
+}
+

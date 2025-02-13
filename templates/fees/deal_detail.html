@@ -1,0 +1,22 @@
+{%  extends "detail_template.html" %}
+{% block detail %}
+    <a class=button-style href="{% url 'minerva:deal-edit' pk=deal.id %}">Edit</a>
+    <table>
+        <tr>
+            <th>Deal ID</th>
+            <td>{{deal.id}}</td>
+        </tr>
+        <tr>
+            <th>Deal code</th>
+            <td>{{deal.code}}</td>
+        </tr>
+        <tr>
+            <th>Deal name</th>
+            <td>{{deal.name}}</td>
+        </tr>
+        <tr>
+            <th>Agent</th>
+            <td>{{deal.agent}}</td>
+        </tr>
+    </table>
+{% endblock %}

@@ -1,0 +1,51 @@
+{%  extends "base.html" %}
+{%  block content %}
+    <h1>Unallocated Clients</h1>
+    <table class="table table-striped table-bordered" >
+        <thead>
+            <tr>
+                <th>Client Code</th>
+                <th>Producer</th>
+                <th>Name</th>
+                <th>Deal</th>
+                <th>Edit</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for obj in unallocated_clients %}
+                <tr>
+                    <td>{{ obj.client_code }}</td>
+                    <td>{{ obj.producer }}</td>
+                    <td>{{ obj.name }}</td>
+                    <td>{{ obj.deal }}</td>
+                    <td><a href="{% url 'minerva:clientedit' client_code=obj.client_code %}">Edit</a></td>
+                </tr>
+            {%  endfor %}
+        </tbody>
+    </table>
+
+    <h1>Clients</h1>
+    <table class="table table-striped table-bordered" >
+        <thead>
+            <tr>
+                <th>Client Code</th>
+                <th>Producer</th>
+                <th>Name</th>
+                <th>Deal</th>
+                <th>Edit</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for obj in allocated_clients %}
+                <tr>
+                    <td>{{ obj.client_code }}</td>
+                    <td>{{ obj.producer }}</td>
+                    <td>{{ obj.name }}</td>
+                    <td>{{ obj.deal }}</td>
+                    <td><a href="{% url 'minerva:clientedit' client_code=obj.client_code %}">Edit</a></td>
+                </tr>
+            {%  endfor %}
+        </tbody>
+    </table>
+{%  endblock %}
+

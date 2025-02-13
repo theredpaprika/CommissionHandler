@@ -1,0 +1,23 @@
+{%  extends "base.html" %}
+{%  block content %}
+    <h1>Accounts</h1>
+    <a href={% url 'accounting:account-create' %}>Create New</a>
+    <table class="table table-striped table-bordered" >
+        <thead>
+            <tr>
+                <td>Account Code</td>
+                <td>Name</td>
+                <td>Balance</td>
+            </tr>
+        </thead>
+        <tbody>
+            {%  for obj in objs %}
+                <tr>
+                    <td><a href="{% url 'accounting:account' account_code=obj.account_code %}">{{ obj.account_code }}</a></td>
+                    <td>{{ obj.name }}</td>
+                    <td>{{ obj.balance }}</td>
+                </tr>
+            {%  endfor %}
+        </tbody>
+    </table>
+{%  endblock %}

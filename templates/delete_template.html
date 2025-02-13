@@ -1,0 +1,10 @@
+{%  extends "base.html" %}
+{%  block content %}
+    <h1>Delete {{ object }}?</h1>
+    This will delete object <{{ object }}> and all related objects.
+    <form class="form-delete" action="" method="POST">
+        {% csrf_token %}
+        <button type="submit">Submit</button>
+    </form>
+        <a class="button-style" href="{{ cancel_link }}">Cancel</a>
+{%  endblock %}

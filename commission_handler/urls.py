@@ -1,5 +1,5 @@
 """
-URL configuration for CommissionHandler project.
+URL configuration for mars project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/5.1/topics/http/urls/
@@ -15,8 +15,18 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
+from .views import home_view, test_view
+from tenants.views import (register_view, login_view, logout_view,)
 
 urlpatterns = [
+    path('', home_view, name='home'),
+    path('fees/', include('fees.urls')),
+    path('accounting/', include('accounting.urls')),
+
     path('admin/', admin.site.urls),
+    path('register/', register_view),
+    path('login/', login_view),
+    path('logout/', logout_view),
+    path('test/', test_view)
 ]

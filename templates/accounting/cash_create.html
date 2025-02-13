@@ -1,0 +1,26 @@
+{%  extends "base.html" %}
+{%  block content %}
+    <h1>Create Journal</h1>
+    <form class="form-create-journal" action='' method="POST">
+        {% csrf_token %}
+        <div>Journal Details</div>
+        <div id="form-container">
+            <div id="main-form">
+                {{ form.as_p }}
+            </div>
+        </div>
+        <br>
+        <div>Entries</div>
+        <div id="formset-container">
+            {{ formset.management_form }}
+            {% for f in formset %}
+                <table>
+                    {{ f.as_table }}
+                </table>
+            {%  endfor %}
+        </div>
+        <button type="button" id="add-more">Add more</button>
+        <button type="submit">Create journal</button>
+    </form>
+    
+{%  endblock %}

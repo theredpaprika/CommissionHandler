@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>{{ title }}</h1>
+    {% if create_link is not None %}
+        <a class="button-style" href="{{ create_link }}">Create New</a>
+    {% endif %}
+    {%  include "table.html" with table=table %}
+{% endblock %}

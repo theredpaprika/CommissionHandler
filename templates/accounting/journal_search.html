@@ -1,0 +1,26 @@
+{%  extends "base.html" %}
+{%  block content %}
+    <h1>Journals</h1>
+    <a href="{% url 'accounting:journal-create' %}">Create New</a>
+    <table class="table table-striped table-bordered" >
+        <thead>
+            <tr>
+                <td>ID</td>
+                <td>Date</td>
+                <td>Description</td>
+                <td>Reference</td>
+            </tr>
+        </thead>
+        <tbody>
+            {%  for obj in objs %}
+                <tr>
+                    <td><a href="{% url 'accounting:journal' id=obj.id %}">{{ obj.id }}</a></td>
+                    <td>{{obj.date}}</td>
+                    <td>{{ obj.description }}</td>
+                    <td>{{ obj.reference }}</td>
+                </tr>
+            {%  endfor %}
+        </tbody>
+
+    </table>
+{%  endblock %}

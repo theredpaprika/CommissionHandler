@@ -1,0 +1,42 @@
+{%  extends "base.html" %}
+{%  block content %}
+    <h1>Create Account Subtype</h1>
+    <form class="form-create-account-subtype" action="" method="POST">
+        {% csrf_token %}
+        {{ form.as_table }}
+        <button type="submit">Create account subtype</button>
+    </form>
+    <table class="table table-striped table-bordered" >
+        <thead>
+            <tr>
+                <td>Account Type</td>
+                <td>Account Subtype Code</td>
+                <td>Is Cumulative</td>
+                <td>Is Contra</td>
+                <td>Name</td>
+                <td>Description</td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for obj in subtypes %}
+                <tr>
+                    <td>{{ obj.account_type }}</td>
+                    <td>{{ obj.account_subtype_code }}</td>
+                    <td>{{ obj.is_cumulative }}</td>
+                    <td>{{ obj.is_contra }}</td>
+                    <td>{{ obj.name }}</td>
+                    <td>{{ obj.description }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{%  endblock %}
+
+
+class AccountSubtype(models.Model):
+    account_type = models.ForeignKey(AccountType, on_delete=models.PROTECT)
+    account_subtype_code = models.CharField(max_length=8)
+    is_cumulative = models.BooleanField(default=True)
+    is_contra = models.BooleanField(default=False)
+    name = models.CharField(max_length=50)
+    description = models.CharField(max_length=100, blank=True)

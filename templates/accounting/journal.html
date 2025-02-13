@@ -1,0 +1,25 @@
+{%  include "base.html" %}
+
+{%  block content %}
+    <h1>Journal Details</h1>
+    
+    <table class="table table-striped table-bordered" id="tbl-accounts">
+        <thead>
+            <tr>
+                <td>Account</td>
+                <td>Amount</td>
+                <td>Description</td>
+                <td>Notes</td>
+            </tr>
+        </thead>
+        {%  for obj in objs %}
+            <tr>
+                <td><a href="{% url 'accounting:account' account_code=obj.account_code%}">{{ obj.account_code }}</a></td>
+                <td>{{ obj.amount }}</td>
+                <td>{{ obj.description }}</td>
+                <td>{{ obj.notes }}</td>
+            </tr>
+        {%  endfor %}
+    </table>
+
+{%  endblock %}

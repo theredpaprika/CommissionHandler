@@ -1,0 +1,30 @@
+{%  extends "detail_template.html" %}
+{% block detail %}
+    <a class=button-style href="{% url 'minerva:journal-edit' pk=journal.id %}">Edit</a>
+    <table>
+        <tr>
+            <th>Journal ID</th>
+            <td>{{journal.id}}</td>
+        </tr>
+        <tr>
+            <th>Reference</th>
+            <td>{{journal.reference}}</td>
+        </tr>
+        <tr>
+            <th>Description</th>
+            <td>{{journal.description}}</td>
+        </tr>
+        <tr>
+            <th>Cash Account</th>
+            <td>{{journal.cash_account}}</td>
+        </tr>
+        <tr>
+            <th>Producer</th>
+            <td>{{journal.producer}}</td>
+        </tr>
+        <tr>
+            <th>Period End Date</th>
+            <td>{{journal.period_end_date}}</td>
+        </tr>
+    </table>
+{% endblock %}
