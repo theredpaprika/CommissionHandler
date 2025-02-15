@@ -88,7 +88,7 @@ class ProducerClient(models.Model):
 
 class Journal(models.Model):
     period_end_date = models.DateField()
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, blank=True)
+    #created_by = models.ForeignKey(User, on_delete=models.CASCADE, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     description = models.CharField(max_length=100)
     reference = models.CharField(max_length=50)

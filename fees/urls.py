@@ -6,7 +6,7 @@ from .views import (agent_search_view, agent_create_view, journals_search_view,
                            journal_detail_create_view,
                            client_create_view, client_search_view, client_edit_view, journal_commit_view,
                            journal_delete_view,
-                           journal_detail_delete_view, journal_upload_view, \
+                           journal_detail_delete_view, journal_upload_view, minerva_journal_commit_view,
                            AgentListView, AgentDetailView, AgentUpdateView, AgentCreateView, DealListView,
                            DealDetailView, DealUpdateView,
                            SplitUpdateView, SplitCreateView, SplitDeleteView, DealCreateView, JournalListView,
@@ -44,8 +44,6 @@ urlpatterns = [
     path('mjournals/<int:journal_id>/details/<int:detail_id>/delete', journal_detail_delete_view,
          name='mjournaldetaildelete'),
 
-
-    # (mostly) CBVs
     path('agents/', AgentListView.as_view(), name='agents'),
     path('agents/create', AgentCreateView.as_view(), name='agent-create'),
     path('agents/<int:pk>', AgentDetailView.as_view(), name='agent-detail'),
@@ -64,4 +62,6 @@ urlpatterns = [
     path('journals/<int:journal_id>/jds/create', JDCreateView.as_view(), name='jd-create'),
     path('journal-details/<int:pk>/edit', JDUpdateView.as_view(), name='jd-edit'),
     path('journal-details/<int:pk>/delete', JDDeleteView.as_view(), name='jd-delete'),
+    path('journals/<int:pk>/commit', minerva_journal_commit_view, name='journal-commit'),
+
 ]

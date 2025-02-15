@@ -362,20 +362,52 @@ def entries_from_journal_detail(detail: JournalDetail):
     return entries
 
 
-# view agents
+#*****************************************************************************
+# CLASS BASED VIEWS
+#*****************************************************************************
+
+
+# LIST VIEWS **************************************************************************************
+
+class FeesListView(SingleTableView):
+    template_name = 'single_table_template.html'
+    context_object_name = 'object'
+
+    def get_context_data(self, **kwargs):
+        context = super(FeesListView, self).get_context_data(**kwargs)
+        context.update(self.context_data)
+        return context
+
 @method_decorator(login_required, name="dispatch")
-class AgentListView(SingleTableView):
-    #queryset = Agent.objects.all()
+class AgentListView(FeesListView):
     model = Agent
     table_class = AgentTable
-    context_object_name = 'object'
-    template_name = 'single_table_template.html'
-    #extra_context = {'view_name': 'Agents'}
-    def get_context_data(self, **kwargs):
-        context = super(AgentListView, self).get_context_data(**kwargs)
-        context['create_link'] = reverse_lazy('fees:agent-create')
-        context['view_name'] = 'Agents'
-        return context
+    context_data = {
+        'create_link': reverse_lazy('fees:agent-create'),
+        'title': 'Agents'
+    }
+
+
+@method_decorator(login_required, name="dispatch")
+class DealListView(FeesListView):
+    model = Deal
+    table_class = DealTable
+    context_data = {
+        'create_link': reverse_lazy('fees:deal-create'),
+        'title': 'Agents'
+    }
+
+@method_decorator(login_required, name="dispatch")
+class JournalListView(FeesListView):
+    model = Journal
+    table_class = JournalTable
+    context_data = {
+        'create_link': reverse_lazy('fees:journal-create'),
+        'title': 'Journals'
+    }
+
+
+# DETAIL VIEWS **************************************************************************************
 
 # view agent
 @method_decorator(login_required, name="dispatch")
@@ -395,37 +427,6 @@ class AgentDetailView(SingleTableMixin, DetailView):
 
     def get_table_data(self):
         return self.object.deals.all()
-
-
-# edit agent
-@method_decorator(login_required, name="dispatch")
-class AgentUpdateView(UpdateView):
-    model = Agent
-    form_class = AgentForm
-    success_url = reverse_lazy('fees:agents')
-    template_name = 'single_form_template.html'
-
-
-@method_decorator(login_required, name="dispatch")
-class AgentCreateView(CreateView):
-    model = Agent
-    form_class = AgentForm
-    success_url = reverse_lazy('fees:agents')
-    template_name = 'single_form_template.html'
-
-
-# view deals
-@method_decorator(login_required, name="dispatch")
-class DealListView(SingleTableView):
-    model = Deal
-    table_class = DealTable
-    template_name = 'single_table_template.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['create_link'] = reverse_lazy('fees:deal-create')
-        context['title'] = 'Deals'
-        return context
 
 
 # view deal
@@ -448,138 +449,6 @@ class DealDetailView(SingleTableMixin, DetailView):
         return self.object.splits.all()
 
 
-# edit deal
-@method_decorator(login_required, name="dispatch")
-class DealUpdateView(UpdateView):
-    model = Deal
-    form_class = DealForm
-    success_url = reverse_lazy('fees:deals')
-    template_name = 'single_form_template.html'
-    extra_context = {'form_type': 'Edit'}
-
-
-# edit deal
-@method_decorator(login_required, name="dispatch")
-class DealCreateView(CreateView):
-    model = Deal
-    form_class = DealForm
-    #success_url = reverse_lazy('fees:deals')
-    template_name = 'single_form_template.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = f'Create Deal'
-        return context
-
-    def form_valid(self, form):
-        self.object = form.save(commit=False)
-        form.instance.agent_id = self.kwargs.get('agent_id')
-        return super().form_valid(form)
-
-    def get_success_url(self):
-        return reverse('fees:agent-detail', kwargs={'pk':self.kwargs.get('agent_id')})
-
-
-
-#edit split
-@method_decorator(login_required, name="dispatch")
-class SplitUpdateView(UpdateView):
-    model = DealSplit
-    form_class = DealSplitForm
-    template_name = 'single_form_template.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = f'Edit Split for: {self.object.deal}'
-        return context
-
-    def get_success_url(self):
-        return reverse('fees:deal-detail', kwargs={'pk':self.object.deal.id})
-
-@method_decorator(login_required, name="dispatch")
-class SplitCreateView(CreateView):
-    model = DealSplit
-    form_class = DealSplitForm
-    template_name = 'single_form_template.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = f'Create Split'
-        return context
-
-    def form_valid(self, form):
-        self.object = form.save(commit=False)
-        form.instance.deal_id = self.kwargs.get('deal_id')
-        return super().form_valid(form)
-
-    def get_success_url(self):
-        return reverse('fees:deal-detail', kwargs={'pk':self.kwargs.get('deal_id')})
-
-
-@method_decorator(login_required, name="dispatch")
-class SplitDeleteView(DeleteView):
-    model = DealSplit
-    template_name = 'delete_template.html'
-    context_object_name = 'object'
-
-    def form_valid(self, form):
-        messages.success(self.request, 'Split deleted')
-        return super().form_valid(form)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['cancel_link'] = reverse('fees:deal-detail', kwargs={'pk':self.object.deal.id})
-        return context
-
-    def get_success_url(self):
-        return reverse('fees:deal-detail', kwargs={'pk':self.object.deal.id})
-
-
-@method_decorator(login_required, name="dispatch")
-class JournalListView(SingleTableView):
-    model = Journal
-    template_name = 'single_table_template.html'
-    context_object_name = 'object'
-    table_class = JournalTable
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['create_link'] = reverse_lazy('fees:journal-create')
-        context['title'] = 'Journals'
-        return context
-
-
-@method_decorator(login_required, name="dispatch")
-class JournalCreateView(CreateView):
-    model = Journal
-    form_class = JournalForm
-    #success_url = reverse_lazy('fees:deals')
-    template_name = 'single_form_template.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = f'Create Journal'
-        return context
-
-    def get_success_url(self):
-        return reverse_lazy('fees:journals')
-
-
-@method_decorator(login_required, name="dispatch")
-class JournalUpdateView(UpdateView):
-    model = Journal
-    form_class = JournalForm
-    template_name = 'single_form_template.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = 'Edit Journal'
-        return context
-
-    def get_success_url(self):
-        return reverse('fees:journals')
-
-
 @method_decorator(login_required, name="dispatch")
 class JournalDetailView(SingleTableMixin, DetailView):
     model = Journal
@@ -599,55 +468,191 @@ class JournalDetailView(SingleTableMixin, DetailView):
         return self.object.details.all()
 
 
-@method_decorator(login_required, name="dispatch")
-class JDCreateView(CreateView):
-    model = JournalDetail
-    form_class = JournalDetailForm
-    #success_url = reverse_lazy('fees:deals')
+# UPDATE VIEWS **************************************************************************************
+
+class FeesUpdateView(UpdateView):
+    related_field = None
+    success_url_name = None
     template_name = 'single_form_template.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = f'Create Journal Detail'
-        return context
-
-    def form_valid(self, form):
-        self.object = form.save(commit=False)
-        form.instance.journal_id = self.kwargs.get('journal_id')
-        return super().form_valid(form)
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        producer = Journal.objects.get(id=self.kwargs.get('journal_id')).producer
-        print(producer)
-        kwargs['producer_context'] = producer
-        return kwargs
 
     def get_success_url(self):
-        return reverse('fees:journal-detail', kwargs={'pk':self.object.journal.id})
+        if not self.related_field:
+            return reverse_lazy(self.success_url_name)
+        related_object = getattr(self.object, self.related_field)
+        return reverse(self.success_url_name, kwargs={'pk': related_object.id})
+
+
+class FeesCreateView(CreateView):
+    related_field = None
+    success_url_name = None
+    template_name = 'single_form_template.html'
+    form_kwargs = None
+
+    def get_success_url(self):
+        if not self.related_field:
+            return reverse_lazy(self.success_url_name)
+        related_object = getattr(self.object, self.related_field)
+        return reverse(self.success_url_name, kwargs={'pk': related_object.id})
+
+    def form_valid(self, form):
+        # if no form kwargs, just submit form
+        if not self.form_kwargs:
+            return super().form_valid(form)
+        else:
+            form.save(commit=False)
+            # update model instance with values from form_kwargs
+            for key, value in self.form_kwargs.items():
+                setattr(form.instance, key, self.kwargs.get(value))
+            return super().form_valid(form)
+
+
+# edit agent
+@method_decorator(login_required, name="dispatch")
+class AgentUpdateView(FeesUpdateView):
+    model = Agent
+    form_class = AgentForm
+    success_url_name = 'fees:agents'
+
+
+# edit deal
+@method_decorator(login_required, name="dispatch")
+class DealUpdateView(FeesUpdateView):
+    model = Deal
+    form_class = DealForm
+    success_url_name = 'fees:agent-detail'
+    related_field = 'agent'
+    extra_context = {'form_type': 'Edit'}
 
 
 @method_decorator(login_required, name="dispatch")
-class JDUpdateView(UpdateView):
+class JournalUpdateView(FeesUpdateView):
+    model = Journal
+    form_class = JournalForm
+    extra_context = {'title': 'Edit Journal'}
+    success_url_name = 'fees:journals'
+
+
+@method_decorator(login_required, name="dispatch")
+class SplitUpdateView(FeesUpdateView):
+    model = DealSplit
+    form_class = DealSplitForm
+    success_url_name = 'fees:deal-detail'
+    related_field = 'deal'
+    extra_context = {'title': 'Edit Split'}
+
+
+@method_decorator(login_required, name="dispatch")
+class JDUpdateView(FeesUpdateView):
     model = JournalDetail
     form_class = JournalDetailForm
-    #success_url = reverse_lazy('fees:deals')
-    template_name = 'single_form_template.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = f'Edit Journal Detail'
-        return context
+    success_url_name = 'fees:journal-detail'
+    related_field = 'journal'
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         producer = self.object.journal.producer
-        print(producer)
         kwargs['producer_context'] = producer
         return kwargs
 
+
+#TODO
+# create a commit journal form with validation in the clean method
+# must ensure all accounts have been assigned to a deal, and if not, redirect
+@login_required
+def minerva_journal_commit_view(request, pk):
+    template = 'fees/journal_commit.html'
+    journal = Journal.objects.get(id=pk)
+    form = JournalCommitConfirmForm(request.POST or None, instance=journal)
+    context = {'form': form}
+    if form.is_valid():
+        journal.status = 'closed'
+        execute_commit_journal(journal)
+        journal.save()
+        return redirect('fees:journals')
+    return render(request, template, context=context)
+
+
+# CREATE VIEWS **************************************************************************************
+
+@method_decorator(login_required, name="dispatch")
+class AgentCreateView(FeesCreateView):
+    model = Agent
+    form_class = AgentForm
+    success_url_name = 'fees:agents'
+    extra_context = {'title':'Create Agent'}
+
+
+@method_decorator(login_required, name="dispatch")
+class DealCreateView(FeesCreateView):
+    model = Deal
+    form_class = DealForm
+    success_url_name = 'fees:agent-detail'
+    related_field = 'agent'
+    extra_context = {'title':'Create Deal'}
+    form_kwargs = {'agent_id': 'agent_id'}
+
+
+@method_decorator(login_required, name="dispatch")
+class SplitCreateView(FeesCreateView):
+    model = DealSplit
+    form_class = DealSplitForm
+    success_url_name = 'fees:deal-detail'
+    related_field = 'deal'
+    extra_context = {'title':'Create Split'}
+    form_kwargs = {'deal_id': 'deal_id'}
+
+
+@method_decorator(login_required, name="dispatch")
+class JournalCreateView(FeesCreateView):
+    model = Journal
+    form_class = JournalForm
+    success_url_name = 'fees:journals'
+    extra_context = {'title': 'Create Journal'}
+
+
+@method_decorator(login_required, name="dispatch")
+class JDCreateView(FeesCreateView):
+    model = JournalDetail
+    form_class = JournalDetailForm
+    success_url_name = 'fees:journal-detail'
+    related_field = 'journal'
+    extra_context = {'title': 'Create Journal Detail'}
+    form_kwargs = {'journal_id': 'journal_id'}
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        producer = Journal.objects.get(id=self.kwargs.get('journal_id')).producer
+        kwargs['producer_context'] = producer
+        return kwargs
+
+
+@method_decorator(login_required, name="dispatch")
+class JournalCommitView(UpdateView):
+    model = Journal
+    form_class = JournalForm
+
+
+
+
+# DELETE VIEWS **************************************************************************************
+
+@method_decorator(login_required, name="dispatch")
+class SplitDeleteView(DeleteView):
+    model = DealSplit
+    template_name = 'delete_template.html'
+    context_object_name = 'object'
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Split deleted')
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['cancel_link'] = reverse('fees:deal-detail', kwargs={'pk':self.object.deal.id})
+        return context
+
     def get_success_url(self):
-        return reverse('fees:journal-detail', kwargs={'pk':self.object.journal.id})
+        return reverse('fees:deal-detail', kwargs={'pk':self.object.deal.id})
 
 
 @method_decorator(login_required, name="dispatch")

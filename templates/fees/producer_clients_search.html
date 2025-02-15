@@ -18,7 +18,7 @@
                     <td>{{ obj.producer }}</td>
                     <td>{{ obj.name }}</td>
                     <td>{{ obj.deal }}</td>
-                    <td><a href="{% url 'minerva:clientedit' client_code=obj.client_code %}">Edit</a></td>
+                    <td><a href="{% url 'fees:clientedit' client_code=obj.client_code %}">Edit</a></td>
                 </tr>
             {%  endfor %}
         </tbody>
