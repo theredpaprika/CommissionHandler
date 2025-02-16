@@ -636,20 +636,28 @@ class JournalCommitView(UpdateView):
 
 # DELETE VIEWS **************************************************************************************
 
+class FeesDeleteView(DeleteView):
+    related_field = None
+    success_url_name = None
+    context_object_name = 'object'
+    template_name = 'delete_template.html'
+    cancel_link_name = None
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if not self.related_field:
+            context['cancel_link'] = reverse_lazy(self.cancel_link_name)
+        else:
+            related_object = getattr(self.object, self.related_field)
+            context['cancel_link'] = reverse(self.cancel_link_name, kwargs={'pk': related_object.id})
+        return context
+
+
 @method_decorator(login_required, name="dispatch")
 class SplitDeleteView(DeleteView):
     model = DealSplit
     template_name = 'delete_template.html'
     context_object_name = 'object'
-
-    def form_valid(self, form):
-        messages.success(self.request, 'Split deleted')
-        return super().form_valid(form)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['cancel_link'] = reverse('fees:deal-detail', kwargs={'pk':self.object.deal.id})
-        return context
 
     def get_success_url(self):
         return reverse('fees:deal-detail', kwargs={'pk':self.object.deal.id})
