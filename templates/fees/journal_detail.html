@@ -1,30 +1,40 @@
 {%  extends "detail_template.html" %}
 {% block detail %}
-    <a class=button-style href="{% url 'fees:journal-edit' pk=journal.id %}">Edit</a>
-    <table>
-        <tr>
-            <th>Journal ID</th>
-            <td>{{journal.id}}</td>
-        </tr>
-        <tr>
-            <th>Reference</th>
-            <td>{{journal.reference}}</td>
-        </tr>
-        <tr>
-            <th>Description</th>
-            <td>{{journal.description}}</td>
-        </tr>
-        <tr>
-            <th>Cash Account</th>
-            <td>{{journal.cash_account}}</td>
-        </tr>
-        <tr>
-            <th>Producer</th>
-            <td>{{journal.producer}}</td>
-        </tr>
-        <tr>
-            <th>Period End Date</th>
-            <td>{{journal.period_end_date}}</td>
-        </tr>
-    </table>
+    <div style="float:left;width:20%">
+        <h2>Details</h2>
+        <a class=button-style href="{% url 'fees:journal-edit' pk=journal.id %}">Edit</a>
+        <table>
+            <tr>
+                <th>Journal ID</th>
+                <td>{{journal.id}}</td>
+            </tr>
+            <tr>
+                <th>Reference</th>
+                <td>{{journal.reference}}</td>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>{{journal.description}}</td>
+            </tr>
+            <tr>
+                <th>Cash Account</th>
+                <td>{{journal.cash_account}}</td>
+            </tr>
+            <tr>
+                <th>Producer</th>
+                <td>{{journal.producer}}</td>
+            </tr>
+            <tr>
+                <th>Period End Date</th>
+                <td>{{journal.period_end_date}}</td>
+            </tr>
+        </table>
+    </div>
+    <div style="float:right;width:80%">
+        {% if table %}
+            <h2>{{ table_heading }}</h2>
+            <a class="button-style" href="{{ create_link }}">Create New</a>
+            {% include "table.html" with table=table %}
+        {% endif %}
+    </div>
 {% endblock %}

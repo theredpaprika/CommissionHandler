@@ -2,17 +2,7 @@
 {% block content %}
     <h1>{{ object }}</h1>
     <div>
-        <div style="float:left;width:20%">
-            <h2>Details</h2>
-            {% block detail %}
-            {% endblock %}
-        </div>
-        <div style="float:right;width:80%">
-            {% if table %}
-                <h2>{{ table_heading }}</h2>
-                <a class="button-style" href="{{ create_link }}">Create New</a>
-                {% include "table.html" with table=table %}
-            {% endif %}
-        </div>
+        {% block detail %}
+        {% endblock %}
     </div>
 {% endblock %}

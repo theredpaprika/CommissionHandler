@@ -1,22 +1,32 @@
 {%  extends "detail_template.html" %}
 {% block detail %}
-    <a class=button-style href="{% url 'fees:deal-edit' pk=deal.id %}">Edit</a>
-    <table>
-        <tr>
-            <th>Deal ID</th>
-            <td>{{deal.id}}</td>
-        </tr>
-        <tr>
-            <th>Deal code</th>
-            <td>{{deal.code}}</td>
-        </tr>
-        <tr>
-            <th>Deal name</th>
-            <td>{{deal.name}}</td>
-        </tr>
-        <tr>
-            <th>Agent</th>
-            <td>{{deal.agent}}</td>
-        </tr>
-    </table>
+    <div style="float:left;width:20%">
+        <h2>Details</h2>
+        <a class=button-style href="{% url 'fees:deal-edit' pk=deal.id %}">Edit</a>
+        <table>
+            <tr>
+                <th>Deal ID</th>
+                <td>{{deal.id}}</td>
+            </tr>
+            <tr>
+                <th>Deal code</th>
+                <td>{{deal.code}}</td>
+            </tr>
+            <tr>
+                <th>Deal name</th>
+                <td>{{deal.name}}</td>
+            </tr>
+            <tr>
+                <th>Agent</th>
+                <td>{{deal.agent}}</td>
+            </tr>
+        </table>
+    </div>
+    <div style="float:right;width:80%">
+        {% if table %}
+            <h2>{{ table_heading }}</h2>
+            <a class="button-style" href="{{ create_link }}">Create New</a>
+            {% include "table.html" with table=table %}
+        {% endif %}
+    </div>
 {% endblock %}
