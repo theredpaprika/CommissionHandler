@@ -34,6 +34,7 @@
         {% if table %}
             <h2>{{ table_heading }}</h2>
             <a class="button-style" href="{{ create_link }}">Create New</a>
+            <a class="button-style" href="{{ upload_link }}">Upload File</a>
             {% include "table.html" with table=table %}
         {% endif %}
     </div>
