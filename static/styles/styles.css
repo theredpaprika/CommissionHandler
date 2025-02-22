@@ -20,7 +20,7 @@
 
 body {
     font-family: 'Ubuntu', 'Liberation Sans', 'DejaVu Sans', sans-serif;
-    background-color: var(--background-colour);
+    background-image: var(--background-colour);
 }
 
 h1 {

@@ -1,0 +1,30 @@
+{%  extends "base.html" %}
+{%  block content %}
+    <h1>File Upload (Journal: {{journal.id}})</h1>
+    <form class="form-upload" enctype="multipart/form-data" method="POST">
+        {% csrf_token %}
+        <table>{{ form.as_table }}</table>
+        <button type="submit">Submit</button>
+    </form>
+    <h1> TEST upload</h1>
+    {%  if not df is None %}
+        <table class="df-upload">
+            <tr>
+            {% for col in df.columns %}
+              <td>
+                {{col}}
+              </td>
+            {% endfor %}
+            </tr>
+            {% for index, row in df.iterrows %}
+              <tr>
+                {% for cell in row %}
+                  <td>
+                    {{cell}}
+                  </td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+        </table>
+    {% endif %}
+{%  endblock %}
