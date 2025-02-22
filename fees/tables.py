@@ -34,6 +34,7 @@ class DealSplitTable(Table):
 class JournalTable(Table):
     id = Column(linkify=True)
     edit = TemplateColumn(template_code="<a href={% url 'fees:journal-edit' record.pk %}>Edit</a>")
+    delete = TemplateColumn(template_code="<a class=journal-delete href={% url 'fees:journal-delete' record.pk %}>Delete</a>")
     class Meta:
         model = Journal
         fields = ('id', 'period_end_date', 'description', 'reference', 'cash_amount', 'producer', 'cash_account')

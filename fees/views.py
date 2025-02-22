@@ -110,39 +110,6 @@ def journal_view(request, journal_id):
     return render(request, template, context=context)
 
 
-@login_required
-def journal_upload_view(request, journal_id):
-
-    template = 'fees/journal_upload.html'
-    journal = Journal.objects.get(id=journal_id)
-    form = UploadFileForm(request.POST or None, request.FILES)
-    context = {'form': form, 'journal': journal}
-
-    if form.is_valid():
-        file = request.FILES['file']
-        df = file_manager.clean_file(journal.producer.code, file)
-        accounts = df.account_code.unique().tolist()
-
-        # get list of accounts missing from DB
-        missing_accounts = (
-            df.loc[df.account_code.isin(check_unallocated_accounts(accounts, journal.producer)),
-            ['account_code', 'name']].drop_duplicates()
-        )
-        missing_accounts = list(missing_accounts.itertuples(index=False))
-
-        # add missing accounts into DB with NULL deal code
-        for missing_account in missing_accounts:
-            ProducerClient.objects.create(
-                producer=journal.producer,
-                client_code=missing_account[0],
-                name=missing_account[1],
-                deal=None,
-                created_by=request.user,
-                updated_by=request.user
-            )
-
-    return render(request, template, context=context)
-
 
 #TODO
 # create a commit journal form with validation in the clean method
@@ -462,6 +429,7 @@ class JournalDetailView(SingleTableMixin, DetailView):
         context['table_heading'] = 'Journal Details'
         context['title'] = f'Journal {self.object}'
         context['create_link'] = reverse('fees:jd-create', kwargs={'journal_id':self.object.id}  )
+        context['upload_link'] = reverse('fees:journal-upload', kwargs={'pk':self.object.id}  )
         return context
 
     def get_table_data(self):
@@ -652,31 +620,66 @@ class FeesDeleteView(DeleteView):
             context['cancel_link'] = reverse(self.cancel_link_name, kwargs={'pk': related_object.id})
         return context
 
+    def get_success_url(self):
+        if not self.related_field:
+            return reverse_lazy(self.success_url_name)
+        related_object = getattr(self.object, self.related_field)
+        return reverse(self.success_url_name, kwargs={'pk': related_object.id})
+
 
 @method_decorator(login_required, name="dispatch")
-class SplitDeleteView(DeleteView):
+class JournalDeleteView(FeesDeleteView):
+    model = Journal
+    success_url_name = 'fees:journals'
+
+
+@method_decorator(login_required, name="dispatch")
+class SplitDeleteView(FeesDeleteView):
     model = DealSplit
-    template_name = 'delete_template.html'
-    context_object_name = 'object'
-
-    def get_success_url(self):
-        return reverse('fees:deal-detail', kwargs={'pk':self.object.deal.id})
+    success_url_name = 'fees:deal-detail'
+    related_field = 'deal'
+    cancel_link_name = 'fees:deal-detail'
 
 
 @method_decorator(login_required, name="dispatch")
-class JDDeleteView(DeleteView):
+class JDDeleteView(FeesDeleteView):
     model = JournalDetail
-    template_name = 'delete_template.html'
-    context_object_name = 'object'
+    success_url_name = 'fees:journal-detail'
+    related_field = 'journal'
+    cancel_link_name = 'fees:journal-detail'
 
-    def form_valid(self, form):
-        messages.success(self.request, 'Journal Detail deleted')
-        return super().form_valid(form)
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['cancel_link'] = reverse('fees:journal-detail', kwargs={'pk':self.object.journal.id})
-        return context
+# ----------------------- JOURNAL UPLOAD ------------------------------------
 
-    def get_success_url(self):
-        return reverse('fees:journal-detail', kwargs={'pk':self.object.journal.id})
+@login_required
+def journal_upload_view(request, pk):
+
+    template = 'fees/journal_upload.html'
+    journal = Journal.objects.get(id=pk)
+    form = UploadFileForm(request.POST or None, request.FILES)
+    context = {'form': form, 'journal': journal}
+
+    if form.is_valid():
+        file = request.FILES['file']
+        df = file_manager.clean_file(journal.producer.code, file)
+        accounts = df.account_code.unique().tolist()
+
+        # get list of accounts missing from DB
+        missing_accounts = (
+            df.loc[df.account_code.isin(check_unallocated_accounts(accounts, journal.producer)),
+            ['account_code', 'name']].drop_duplicates()
+        )
+        missing_accounts = list(missing_accounts.itertuples(index=False))
+
+        # add missing accounts into DB with NULL deal code
+        for missing_account in missing_accounts:
+            ProducerClient.objects.create(
+                producer=journal.producer,
+                client_code=missing_account[0],
+                name=missing_account[1],
+                deal=None,
+                created_by=request.user,
+                updated_by=request.user
+            )
+
+    return render(request, template, context=context)
