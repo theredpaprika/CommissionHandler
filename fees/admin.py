@@ -19,3 +19,4 @@ class ProducerAdmin(admin.ModelAdmin):
 admin.site.register(Agent, AgentAdmin)
 admin.site.register(Producer, ProducerAdmin)
 admin.site.register(BkgeClass, BkgeClassAdmin)
+

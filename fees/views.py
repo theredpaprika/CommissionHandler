@@ -664,6 +664,8 @@ def journal_upload_view(request, pk):
         df = file_manager.clean_file(journal.producer.code, file)
         accounts = df.account_code.unique().tolist()
 
+        context['df'] = df
+
         # get list of accounts missing from DB
         missing_accounts = (
             df.loc[df.account_code.isin(check_unallocated_accounts(accounts, journal.producer)),
@@ -671,6 +673,7 @@ def journal_upload_view(request, pk):
         )
         missing_accounts = list(missing_accounts.itertuples(index=False))
 
+        """
         # add missing accounts into DB with NULL deal code
         for missing_account in missing_accounts:
             ProducerClient.objects.create(
@@ -681,5 +684,6 @@ def journal_upload_view(request, pk):
                 created_by=request.user,
                 updated_by=request.user
             )
+        """
 
     return render(request, template, context=context)

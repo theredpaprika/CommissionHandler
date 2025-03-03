@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'accounting.apps.AccountingConfig',
     'tenants.apps.TenantsConfig',
     'django_tables2',
+    'charges.apps.ChargesConfig'
 ]
 
 MIDDLEWARE = [

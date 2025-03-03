@@ -80,3 +80,4 @@ class JournalCommitConfirmForm(forms.ModelForm):
         if (journal.cash_amount - journal.total_credits() != 0):
             raise forms.ValidationError('Debits do not equal credits')
         return cleaned_data
+

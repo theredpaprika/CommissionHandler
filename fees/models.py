@@ -133,5 +133,4 @@ class Entry(models.Model):
     agent = models.ForeignKey(Agent, on_delete=models.CASCADE)
     amount = models.FloatField()
     gst = models.FloatField()
-    pass
 

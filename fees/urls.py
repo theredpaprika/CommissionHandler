@@ -66,5 +66,4 @@ urlpatterns = [
     path('journals/<int:pk>/commit', minerva_journal_commit_view, name='journal-commit'),
     path('journals/<int:pk>/upload', journal_upload_view, name='journal-upload'),
 
-
 ]
