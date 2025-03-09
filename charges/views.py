@@ -7,18 +7,19 @@ from django.urls import reverse_lazy, reverse
 
 from .tables import ChargeTypeTable, ChargeScheduleTable
 from .models import ChargeType, ChargeSchedule
-from .forms import ChargeTypeForm
+from .forms import ChargeTypeForm, ChargeScheduleForm
 
 
 # -----------------------------------------------------------------
 # GENERIC VIEWS
+
 
 class ChargeBaseListView(SingleTableView):
     template_name = 'single_table_template.html'
     context_object_name = 'object'
 
     def get_context_data(self, **kwargs):
-        context = super(ChargeBaseListView, self).get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
         context.update(self.context_data)
         return context
 
@@ -46,6 +47,7 @@ class ChargeBaseCreateView(CreateView):
                 setattr(form.instance, key, self.kwargs.get(value))
             return super().form_valid(form)
 
+
 class ChargeBaseUpdateView(UpdateView):
     related_field = None
     success_url_name = None
@@ -57,6 +59,7 @@ class ChargeBaseUpdateView(UpdateView):
         related_object = getattr(self.object, self.related_field)
         return reverse(self.success_url_name, kwargs={'pk': related_object.id})
 
+
 # -----------------------------------------------------------------
 # LIST VIEWS
 
@@ -65,7 +68,7 @@ class ChargeTypeListView(ChargeBaseListView):
     model = ChargeType
     table_class = ChargeTypeTable
     context_data = {
-        'create_link': reverse_lazy('charges:charge-type-create'),
+        'create_link': reverse_lazy('charges:type-create'),
         'title': 'Charge Types'
     }
 
@@ -75,6 +78,7 @@ class ChargeScheduleListView(ChargeBaseListView):
     model = ChargeSchedule
     table_class = ChargeScheduleTable
     context_data = {
+        'create_link': reverse_lazy('charges:schedule-create'),
         'title': 'Charge Schedule'
     }
 
@@ -87,8 +91,17 @@ class ChargeScheduleListView(ChargeBaseListView):
 class ChargeTypeCreateView(ChargeBaseCreateView):
     model = ChargeType
     form_class = ChargeTypeForm
-    success_url_name = 'charges:charge-types'
+    success_url_name = 'charges:types'
     extra_context = {'title':'Create Charge Type'}
+
+
+@method_decorator(login_required, name="dispatch")
+class ChargeScheduleCreateView(ChargeBaseCreateView):
+    model = ChargeSchedule
+    form_class = ChargeScheduleForm
+    success_url_name = 'charges:schedules'
+    extra_context = {'title':'Create Charge Schedule'}
+
 
 # ------------------------------------------------------------------
 # UPDATE VIEWS
@@ -99,4 +112,12 @@ class ChargeTypeUpdateView(ChargeBaseUpdateView):
     model = ChargeType
     form_class = ChargeTypeForm
     extra_context = {'title':'Create Charge Type'}
-    success_url_name = 'charges:charge-types'
+    success_url_name = 'charges:types'
+
+
+@method_decorator(login_required, name="dispatch")
+class ChargeScheduleUpdateView(ChargeBaseUpdateView):
+    model = ChargeSchedule
+    form_class = ChargeScheduleForm
+    success_url_name = 'charges:schedules'
+    extra_context = {'title':'Update Charge Schedule'}
