@@ -450,30 +450,6 @@ class FeesUpdateView(UpdateView):
         return reverse(self.success_url_name, kwargs={'pk': related_object.id})
 
 
-class FeesCreateView(CreateView):
-    related_field = None
-    success_url_name = None
-    template_name = 'single_form_template.html'
-    form_kwargs = None
-
-    def get_success_url(self):
-        if not self.related_field:
-            return reverse_lazy(self.success_url_name)
-        related_object = getattr(self.object, self.related_field)
-        return reverse(self.success_url_name, kwargs={'pk': related_object.id})
-
-    def form_valid(self, form):
-        # if no form kwargs, just submit form
-        if not self.form_kwargs:
-            return super().form_valid(form)
-        else:
-            form.save(commit=False)
-            # update model instance with values from form_kwargs
-            for key, value in self.form_kwargs.items():
-                setattr(form.instance, key, self.kwargs.get(value))
-            return super().form_valid(form)
-
-
 # edit agent
 @method_decorator(login_required, name="dispatch")
 class AgentUpdateView(FeesUpdateView):
@@ -541,6 +517,30 @@ def minerva_journal_commit_view(request, pk):
 
 
 # CREATE VIEWS **************************************************************************************
+
+class FeesCreateView(CreateView):
+    related_field = None
+    success_url_name = None
+    template_name = 'single_form_template.html'
+    form_kwargs = None
+
+    def get_success_url(self):
+        if not self.related_field:
+            return reverse_lazy(self.success_url_name)
+        related_object = getattr(self.object, self.related_field)
+        return reverse(self.success_url_name, kwargs={'pk': related_object.id})
+
+    def form_valid(self, form):
+        # if no form kwargs, just submit form
+        if not self.form_kwargs:
+            return super().form_valid(form)
+        else:
+            form.save(commit=False)
+            # update model instance with values from form_kwargs
+            for key, value in self.form_kwargs.items():
+                setattr(form.instance, key, self.kwargs.get(value))
+            return super().form_valid(form)
+
 
 @method_decorator(login_required, name="dispatch")
 class AgentCreateView(FeesCreateView):
