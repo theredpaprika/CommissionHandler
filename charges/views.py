@@ -16,6 +16,15 @@ class ChargesListView(SingleTableView):
         context.update(self.context_data)
         return context
 
+# -----------------------------------------------------------------
+
+@method_decorator(login_required, name="dispatch")
+class ChargeTypeListView(ChargesListView):
+    model = ChargeType
+    table_class = ChargeTypeTable
+    context_data = {
+        'title': 'Charge Types'
+    }
 
 @method_decorator(login_required, name="dispatch")
 class ChargeTypeListView(ChargesListView):
