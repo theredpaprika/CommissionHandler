@@ -17,3 +17,12 @@ class ChargeScheduleTable(Table):
         fields = ['charge_type','paying_agent','receiving_agent','frequency','allow_partial_payment',
                   'roll_balance','status','priority','start_date','end_date','amount','gst']
         orderable = True
+
+
+class ChargeTable(Table):
+    class Meta:
+        model = ChargeSchedule
+        fields = ['charge_type','paying_agent','receiving_agent','total_amount',
+                  'total_gst','outstanding_amount','outstanding_gst', 'priority']
+        orderable = True
+

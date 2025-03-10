@@ -1,5 +1,5 @@
 from django import forms
-from fees.models import Agent, Journal, Deal, DealSplit, JournalDetail, ProducerClient
+from fees.models import Agent, Journal, Deal, DealSplit, JournalDetail, ProducerClient, BkgeClass
 from django.contrib.auth import get_user_model
 
 class AgentForm(forms.ModelForm):
@@ -48,6 +48,13 @@ class ProducerClientForm(forms.ModelForm):
     class Meta:
         model = ProducerClient
         exclude = ['created_by', 'updated_by', 'created_at', 'updated_at']
+        widgets = {'class': 'form-control'}
+
+
+class BkgeClassForm(forms.ModelForm):
+    class Meta:
+        model = BkgeClass
+        fields = ['code','name']
         widgets = {'class': 'form-control'}
 
 

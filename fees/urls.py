@@ -11,7 +11,7 @@ from .views import (agent_search_view, agent_create_view, journals_search_view,
                            DealDetailView, DealUpdateView,
                            SplitUpdateView, SplitCreateView, SplitDeleteView, DealCreateView, JournalListView,
                            JournalCreateView, JournalUpdateView, JournalDetailView, JournalDeleteView, JDCreateView,
-                           JDUpdateView, JDDeleteView)
+                           JDUpdateView, JDDeleteView, BkgeClassListView, BkgeClassCreateView, BkgeClassUpdateView)
 
 app_name = 'fees'
 
@@ -65,5 +65,8 @@ urlpatterns = [
     path('journal-details/<int:pk>/delete', JDDeleteView.as_view(), name='jd-delete'),
     path('journals/<int:pk>/commit', minerva_journal_commit_view, name='journal-commit'),
     path('journals/<int:pk>/upload', journal_upload_view, name='journal-upload'),
+    path('bkgeclasses', BkgeClassListView.as_view(), name='bkgeclasses'),
+    path('bkgeclasses/create', BkgeClassCreateView.as_view(), name='bkgeclass-create'),
+    path('bkgeclasses/<int:pk>/edit', BkgeClassUpdateView.as_view(), name='bkgeclass-edit'),
 
 ]

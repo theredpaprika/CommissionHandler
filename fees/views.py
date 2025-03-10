@@ -6,10 +6,10 @@ from django.views.generic import ListView, DetailView, UpdateView, DeleteView, C
 from django_tables2 import SingleTableView, MultiTableMixin, SingleTableMixin
 from django.urls import reverse_lazy, reverse
 
-from .models import Agent, Journal, Deal, DealSplit, ProducerClient, JournalDetail, Producer, Entry
-from .forms import (AgentForm, JournalForm, DealForm, DealSplitForm, JournalDetailForm,
+from .models import Agent, Journal, Deal, DealSplit, ProducerClient, JournalDetail, Producer, Entry, BkgeClass
+from .forms import (AgentForm, JournalForm, DealForm, DealSplitForm, JournalDetailForm, BkgeClassForm,
                     ProducerClientForm, DeleteConfirmForm, UploadFileForm, JournalCommitConfirmForm)
-from .tables import (AgentTable, DealTable, DealSplitTable, JournalTable, JDTable)
+from .tables import (AgentTable, DealTable, DealSplitTable, JournalTable, JDTable, BkgeClassTable)
 
 from files import file_manager
 
@@ -373,6 +373,14 @@ class JournalListView(FeesListView):
         'title': 'Journals'
     }
 
+@method_decorator(login_required, name="dispatch")
+class BkgeClassListView(FeesListView):
+    model = BkgeClass
+    table_class = BkgeClassTable
+    context_data = {
+        'create_link': reverse_lazy('fees:bkgeclass-create'),
+        'title': 'Brokerage Classes'
+    }
 
 # DETAIL VIEWS **************************************************************************************
 
@@ -499,6 +507,14 @@ class JDUpdateView(FeesUpdateView):
         return kwargs
 
 
+@method_decorator(login_required, name="dispatch")
+class BkgeClassUpdateView(FeesUpdateView):
+    model = BkgeClass
+    form_class = BkgeClassForm
+    success_url_name = 'fees:bkgeclasses'
+    extra_context = {'title': 'Edit Brokerage Class'}
+
+
 #TODO
 # create a commit journal form with validation in the clean method
 # must ensure all accounts have been assigned to a deal, and if not, redirect
@@ -599,6 +615,13 @@ class JournalCommitView(UpdateView):
     model = Journal
     form_class = JournalForm
 
+
+@method_decorator(login_required, name="dispatch")
+class BkgeClassCreateView(FeesCreateView):
+    model = BkgeClass
+    form_class = BkgeClassForm
+    success_url_name = 'fees:bkgeclasses'
+    extra_context = {'title': 'Create Brokerage Class'}
 
 
 

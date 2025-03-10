@@ -7,25 +7,7 @@
     <link rel="stylesheet" type="text/css" href="{% static '/styles/styles.css' %}">
 </head>
 <body>
-    <img src="{% static '/images/logo.png' %}" alt="www.example.com">
-    <nav class="navbar">
-        <div>
-            <ul class="header-list-group">
-                <li class="header-list-group-item"><a class="nav-link" href="{% url 'home' %}">Home</a></li>
-                <li class="header-list-group-item"><a class="nav-link" href="{% url 'fees:agents' %}">Agents</a></li>
-                <li class="header-list-group-item"><a class="nav-link" href="{% url 'fees:clients' %}">Clients</a></li>
-                <li class="header-list-group-item"><a class="nav-link" href="{% url 'fees:journals' %}">Journals</a></li>
-                <li class="header-list-group-item"><a class="nav-link" href="{% url 'accounting:accounts' %}">Accounts</a></li>
-                <li class="header-list-group-item"><a class="nav-link" href="{% url 'accounting:journals' %}">Account Txns</a></li>
-                <li class="header-list-group-item"><a class="nav-link" href="{% url 'accounting:add-cash' %}">Cash</a></li>
-                {%  if request.user.is_authenticated %}
-                    <li class="header-list-group-item"><a class="nav-link" href="/logout">Logout</a></li>
-                {%  else %}
-                    <li class="header-list-group-item"><a class="nav-link" href="/login">Login</a></li>
-                {%  endif %}
-            </ul>
-        </div>
-    </nav>
+    {% include "header.html" %}
     {%  block content %}
     {% endblock %}
 </body>

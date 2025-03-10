@@ -39,3 +39,5 @@ class Charge(models.Model):
     status = models.CharField(max_length=10)
     priority = models.IntegerField(default=0)
 
+
+

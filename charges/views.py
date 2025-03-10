@@ -5,8 +5,8 @@ from django.contrib.auth.decorators import login_required
 from django_tables2 import SingleTableView, MultiTableMixin, SingleTableMixin
 from django.urls import reverse_lazy, reverse
 
-from .tables import ChargeTypeTable, ChargeScheduleTable
-from .models import ChargeType, ChargeSchedule
+from .tables import ChargeTypeTable, ChargeScheduleTable, ChargeTable
+from .models import ChargeType, ChargeSchedule, Charge
 from .forms import ChargeTypeForm, ChargeScheduleForm
 
 
@@ -72,7 +72,6 @@ class ChargeTypeListView(ChargeBaseListView):
         'title': 'Charge Types'
     }
 
-
 @method_decorator(login_required, name="dispatch")
 class ChargeScheduleListView(ChargeBaseListView):
     model = ChargeSchedule
@@ -80,6 +79,15 @@ class ChargeScheduleListView(ChargeBaseListView):
     context_data = {
         'create_link': reverse_lazy('charges:schedule-create'),
         'title': 'Charge Schedule'
+    }
+
+
+@method_decorator(login_required, name="dispatch")
+class ChargesListView(ChargeBaseListView):
+    model = Charge
+    table_class = ChargeTable
+    context_data = {
+        'title': 'Open Charges'
     }
 
 

@@ -1,7 +1,7 @@
 
 from django_tables2 import Table, Column, TemplateColumn
 
-from .models import Agent, Deal, DealSplit, Journal, JournalDetail
+from .models import Agent, Deal, DealSplit, Journal, JournalDetail, BkgeClass
 
 class AgentTable(Table):
     agent_code = Column(linkify=True)
@@ -47,4 +47,12 @@ class JDTable(Table):
     class Meta:
         model = JournalDetail
         fields = ('id', 'amount', 'gst', 'details', 'lender_amount', 'lender_gst', 'balance', 'limit', 'bkge_class', 'client_account_code')
+        orderable = True
+
+
+class BkgeClassTable(Table):
+    edit = TemplateColumn(template_code="<a href={% url 'fees:bkgeclass-edit' record.pk %}>Edit</a>")
+    class Meta:
+        model = BkgeClass
+        fields = ('code','name')
         orderable = True
