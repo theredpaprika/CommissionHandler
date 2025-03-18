@@ -3,11 +3,12 @@
     --primary-colour: #2c2c2c;
     --secondary-colour: #f0f0f0;
     --tertiary-colour: #e6e6e6;
-    --accent-colour: #bd0f06;
-    --second-accent-colour: #70a8a3;
+    --accent-colour: #43938a;
+    --second-accent-colour: #91cdc8;
     --background-colour: #f7fafc;
     --text-colour: #111111;
     --active-colour: #aa0904;
+    --backup-accent-colour: #bd0f06;
     --light-text: #ffffff;
 
 }
@@ -19,10 +20,13 @@
     font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
     border-radius: 6px;
     padding: 3px 6px;
+    text-decoration-line: underline;
+    border: 2px solid black;
 }
 
 .navbar-nav {
     background-color: var(--accent-colour);
+    color: var(--light-text);
     list-style-type: none;
     margin: 0;
     padding: 0;
@@ -36,14 +40,19 @@
     display: inline-block;
     position: relative;
     background-color: var(--accent-colour);
+    color: var(--light-text);
+    list-style-type: none;
 }
 
 .dropdown {
     display: none;
+    list-style-type: none;
     position: absolute;
     background-color: var(--accent-colour);
-    min-width: 110px;
     z-index: 1;
+    border-radius: 6px;
+    padding: 3px 3px;
+    min-width: 160px;
 }
 
 .nav-item:hover .dropdown,
@@ -55,6 +64,10 @@
 body {
     font-family: 'Ubuntu', 'Liberation Sans', 'DejaVu Sans', sans-serif;
     background-color: var(--background-colour);
+}
+
+a {
+    color: inherit;
 }
 
 h1 {

@@ -10,8 +10,7 @@ class ChargeType(models.Model):
     bkge_class = models.ForeignKey(BkgeClass, on_delete=models.CASCADE, related_name='charge_types')
     producer_filter = models.ForeignKey(Producer, on_delete=models.CASCADE, null=True, blank=True)
     bkge_class_filter = models.ForeignKey(
-        BkgeClass, on_delete=models.CASCADE, related_name='charge_types_bkge_filter',
-        null=True, blank=True)
+        BkgeClass, on_delete=models.CASCADE, related_name='charge_types_bkge_filter', null=True, blank=True)
 
     def __str__(self):
         return f"{self.code} - {self.name}"
