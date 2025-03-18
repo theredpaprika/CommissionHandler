@@ -1,5 +1,5 @@
 from django import forms
-from fees.models import Agent, Journal, Deal, DealSplit, JournalDetail, ProducerClient
+from fees.models import Agent, Journal, Deal, DealSplit, JournalDetail, ProducerClient, BkgeClass, Producer
 from django.contrib.auth import get_user_model
 
 class AgentForm(forms.ModelForm):
@@ -51,6 +51,20 @@ class ProducerClientForm(forms.ModelForm):
         widgets = {'class': 'form-control'}
 
 
+class BkgeClassForm(forms.ModelForm):
+    class Meta:
+        model = BkgeClass
+        fields = ['code','name']
+        widgets = {'class': 'form-control'}
+
+
+class ProducerForm(forms.ModelForm):
+    class Meta:
+        model = Producer
+        fields = ['code','name']
+        widgets = {'class': 'form-control'}
+
+
 class DeleteConfirmForm(forms.Form):
     confirm = forms.BooleanField(required=True)
 
@@ -80,3 +94,4 @@ class JournalCommitConfirmForm(forms.ModelForm):
         if (journal.cash_amount - journal.total_credits() != 0):
             raise forms.ValidationError('Debits do not equal credits')
         return cleaned_data
+

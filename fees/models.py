@@ -4,6 +4,7 @@ from accounting.models import Account
 from django.db.models import Sum
 from django.urls import reverse
 
+
 User = get_user_model()
 
 # Create your models here.
@@ -112,7 +113,8 @@ class Journal(models.Model):
 class JournalDetail(models.Model):
     journal = models.ForeignKey(Journal, on_delete=models.CASCADE, related_name='details')
     client_account_code = models.ForeignKey(ProducerClient, on_delete=models.CASCADE, related_name='journal_details')
-    bkge_class = models.ForeignKey(BkgeClass, on_delete=models.CASCADE)
+    related_charge = models.ForeignKey('charges.Charge', on_delete=models.SET_NULL, related_name='related_journal_details', null=True, blank=True)
+    bkge_class = models.ForeignKey('fees.BkgeClass', on_delete=models.CASCADE)
     product = models.CharField(max_length=100)
     external_adviser = models.CharField(max_length=100)
     amount = models.FloatField()
@@ -133,5 +135,4 @@ class Entry(models.Model):
     agent = models.ForeignKey(Agent, on_delete=models.CASCADE)
     amount = models.FloatField()
     gst = models.FloatField()
-    pass
 

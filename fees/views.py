@@ -6,10 +6,10 @@ from django.views.generic import ListView, DetailView, UpdateView, DeleteView, C
 from django_tables2 import SingleTableView, MultiTableMixin, SingleTableMixin
 from django.urls import reverse_lazy, reverse
 
-from .models import Agent, Journal, Deal, DealSplit, ProducerClient, JournalDetail, Producer, Entry
-from .forms import (AgentForm, JournalForm, DealForm, DealSplitForm, JournalDetailForm,
-                    ProducerClientForm, DeleteConfirmForm, UploadFileForm, JournalCommitConfirmForm)
-from .tables import (AgentTable, DealTable, DealSplitTable, JournalTable, JDTable)
+from .models import Agent, Journal, Deal, DealSplit, ProducerClient, JournalDetail, Producer, Entry, BkgeClass
+from .forms import (AgentForm, JournalForm, DealForm, DealSplitForm, JournalDetailForm, BkgeClassForm,
+                    ProducerClientForm, DeleteConfirmForm, UploadFileForm, JournalCommitConfirmForm, ProducerForm)
+from .tables import (AgentTable, DealTable, DealSplitTable, JournalTable, JDTable, BkgeClassTable, ProducerTable)
 
 from files import file_manager
 
@@ -373,6 +373,24 @@ class JournalListView(FeesListView):
         'title': 'Journals'
     }
 
+@method_decorator(login_required, name="dispatch")
+class BkgeClassListView(FeesListView):
+    model = BkgeClass
+    table_class = BkgeClassTable
+    context_data = {
+        'create_link': reverse_lazy('fees:bkgeclass-create'),
+        'title': 'Brokerage Classes'
+    }
+
+@method_decorator(login_required, name="dispatch")
+class ProducerListView(FeesListView):
+    model = Producer
+    table_class = ProducerTable
+    context_data = {
+        'create_link': reverse_lazy('fees:producer-create'),
+        'title': 'Producer'
+    }
+
 
 # DETAIL VIEWS **************************************************************************************
 
@@ -450,30 +468,6 @@ class FeesUpdateView(UpdateView):
         return reverse(self.success_url_name, kwargs={'pk': related_object.id})
 
 
-class FeesCreateView(CreateView):
-    related_field = None
-    success_url_name = None
-    template_name = 'single_form_template.html'
-    form_kwargs = None
-
-    def get_success_url(self):
-        if not self.related_field:
-            return reverse_lazy(self.success_url_name)
-        related_object = getattr(self.object, self.related_field)
-        return reverse(self.success_url_name, kwargs={'pk': related_object.id})
-
-    def form_valid(self, form):
-        # if no form kwargs, just submit form
-        if not self.form_kwargs:
-            return super().form_valid(form)
-        else:
-            form.save(commit=False)
-            # update model instance with values from form_kwargs
-            for key, value in self.form_kwargs.items():
-                setattr(form.instance, key, self.kwargs.get(value))
-            return super().form_valid(form)
-
-
 # edit agent
 @method_decorator(login_required, name="dispatch")
 class AgentUpdateView(FeesUpdateView):
@@ -523,6 +517,22 @@ class JDUpdateView(FeesUpdateView):
         return kwargs
 
 
+@method_decorator(login_required, name="dispatch")
+class BkgeClassUpdateView(FeesUpdateView):
+    model = BkgeClass
+    form_class = BkgeClassForm
+    success_url_name = 'fees:bkgeclasses'
+    extra_context = {'title': 'Edit Brokerage Class'}
+
+
+@method_decorator(login_required, name="dispatch")
+class ProducerUpdateView(FeesUpdateView):
+    model = Producer
+    form_class = ProducerForm
+    success_url_name = 'fees:producers'
+    extra_context = {'title': 'Edit Producer'}
+
+
 #TODO
 # create a commit journal form with validation in the clean method
 # must ensure all accounts have been assigned to a deal, and if not, redirect
@@ -541,6 +551,30 @@ def minerva_journal_commit_view(request, pk):
 
 
 # CREATE VIEWS **************************************************************************************
+
+class FeesCreateView(CreateView):
+    related_field = None
+    success_url_name = None
+    template_name = 'single_form_template.html'
+    form_kwargs = None
+
+    def get_success_url(self):
+        if not self.related_field:
+            return reverse_lazy(self.success_url_name)
+        related_object = getattr(self.object, self.related_field)
+        return reverse(self.success_url_name, kwargs={'pk': related_object.id})
+
+    def form_valid(self, form):
+        # if no form kwargs, just submit form
+        if not self.form_kwargs:
+            return super().form_valid(form)
+        else:
+            form.save(commit=False)
+            # update model instance with values from form_kwargs
+            for key, value in self.form_kwargs.items():
+                setattr(form.instance, key, self.kwargs.get(value))
+            return super().form_valid(form)
+
 
 @method_decorator(login_required, name="dispatch")
 class AgentCreateView(FeesCreateView):
@@ -600,6 +634,20 @@ class JournalCommitView(UpdateView):
     form_class = JournalForm
 
 
+@method_decorator(login_required, name="dispatch")
+class BkgeClassCreateView(FeesCreateView):
+    model = BkgeClass
+    form_class = BkgeClassForm
+    success_url_name = 'fees:bkgeclasses'
+    extra_context = {'title': 'Create Brokerage Class'}
+
+
+@method_decorator(login_required, name="dispatch")
+class ProducerCreateView(FeesCreateView):
+    model = Producer
+    form_class = ProducerForm
+    success_url_name = 'fees:producers'
+    extra_context = {'title': 'Create Producer'}
 
 
 # DELETE VIEWS **************************************************************************************
@@ -664,6 +712,8 @@ def journal_upload_view(request, pk):
         df = file_manager.clean_file(journal.producer.code, file)
         accounts = df.account_code.unique().tolist()
 
+        context['df'] = df
+
         # get list of accounts missing from DB
         missing_accounts = (
             df.loc[df.account_code.isin(check_unallocated_accounts(accounts, journal.producer)),
@@ -671,6 +721,7 @@ def journal_upload_view(request, pk):
         )
         missing_accounts = list(missing_accounts.itertuples(index=False))
 
+        """
         # add missing accounts into DB with NULL deal code
         for missing_account in missing_accounts:
             ProducerClient.objects.create(
@@ -681,5 +732,6 @@ def journal_upload_view(request, pk):
                 created_by=request.user,
                 updated_by=request.user
             )
+        """
 
     return render(request, template, context=context)

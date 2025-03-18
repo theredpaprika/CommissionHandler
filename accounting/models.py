@@ -1,11 +1,47 @@
-from django.db import models
 from django.db.models import Sum
 from django.utils.text import slugify
-from django.db.models.signals import pre_save, post_save
+from django.utils.timezone import now
+from django.db import models
+from datetime import datetime, timedelta
+import calendar
 
+class CommissionPeriod(models.Model):
+    end_date = models.DateField(unique=True)  # Last day of the month
+    processed = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-from django.db.models.signals import post_save
-from django.dispatch import receiver
+    @classmethod
+    def get_current_period(cls):
+        """Returns the existing commission period for this month or creates a new one."""
+        today = now().date()
+        last_day = cls.get_last_day_of_month(today)
+        period, created = cls.objects.get_or_create(end_date=last_day)
+        return period
+
+    @classmethod
+    def close_and_create_new_period(cls):
+        """Closes the current period and creates a new one for the next month."""
+        current_period = cls.get_current_period()
+        if not current_period.processed:
+            current_period.processed = True
+            current_period.save()
+
+        # Create the next month's period
+        next_month_date = current_period.end_date + timedelta(days=1)  # First day of next month
+        next_last_day = cls.get_last_day_of_month(next_month_date)
+        new_period, created = cls.objects.get_or_create(end_date=next_last_day)
+
+        return new_period
+
+    @staticmethod
+    def get_last_day_of_month(date):
+        """Returns the last day of the month for a given date."""
+        last_day = calendar.monthrange(date.year, date.month)[1]
+        return date.replace(day=last_day)
+
+    def __str__(self):
+        return f"{self.end_date.strftime('%Y-%m-%d')} - {'Processed' if self.processed else 'Pending'}"
 
 
 class Account(models.Model):

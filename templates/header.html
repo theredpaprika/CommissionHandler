@@ -1,0 +1,42 @@
+{% load static %}
+<img src="{% static '/images/logo.png' %}" alt="www.example.com">
+
+<nav class="navbar">
+    <div>
+        <ul class="navbar-nav">
+            <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Home</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'fees:agents' %}">Agents</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'fees:clients' %}">Clients</a></li>
+
+            <li class="nav-item">Fees
+                <ul class="dropdown">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'fees:journals' %}">Open Journals</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'fees:bkgeclasses' %}">Bkge Classes</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'fees:producers' %}">Producers</a></li>
+                </ul>
+            </li>
+
+            <li class="nav-item">Charges
+                <ul class="dropdown">
+                    <li><a class="nav-link" href="{% url 'charges:types' %}">Charge Types</a></li>
+                    <li><a class="nav-link" href="{% url 'charges:schedules' %}">Scheduled Charges</a></li>
+                    <li><a class="nav-link" href="{% url 'charges:charges' %}">Open Charges</a></li>
+                </ul>
+            </li>
+
+            <li class="nav-item">Accounting
+                <ul class="dropdown">
+                    <li><a class="nav-link" href="{% url 'accounting:accounts' %}">Accounts</a></li>
+                    <li><a class="nav-link" href="{% url 'accounting:journals' %}">Account Txns</a></li>
+                    <li><a class="nav-link" href="{% url 'accounting:add-cash' %}">Cash</a></li>
+                </ul>
+            </li>
+
+            {%  if request.user.is_authenticated %}
+                <li class="nav-item"><a class="nav-link" href="/logout">Logout</a></li>
+            {%  else %}
+                <li class="nav-item"><a class="nav-link" href="/login">Login</a></li>
+            {%  endif %}
+        </ul>
+    </div>
+</nav>
