@@ -8,8 +8,8 @@ from django.urls import reverse_lazy, reverse
 
 from .models import Agent, Journal, Deal, DealSplit, ProducerClient, JournalDetail, Producer, Entry, BkgeClass
 from .forms import (AgentForm, JournalForm, DealForm, DealSplitForm, JournalDetailForm, BkgeClassForm,
-                    ProducerClientForm, DeleteConfirmForm, UploadFileForm, JournalCommitConfirmForm)
-from .tables import (AgentTable, DealTable, DealSplitTable, JournalTable, JDTable, BkgeClassTable)
+                    ProducerClientForm, DeleteConfirmForm, UploadFileForm, JournalCommitConfirmForm, ProducerForm)
+from .tables import (AgentTable, DealTable, DealSplitTable, JournalTable, JDTable, BkgeClassTable, ProducerTable)
 
 from files import file_manager
 
@@ -382,6 +382,16 @@ class BkgeClassListView(FeesListView):
         'title': 'Brokerage Classes'
     }
 
+@method_decorator(login_required, name="dispatch")
+class ProducerListView(FeesListView):
+    model = Producer
+    table_class = ProducerTable
+    context_data = {
+        'create_link': reverse_lazy('fees:producer-create'),
+        'title': 'Producer'
+    }
+
+
 # DETAIL VIEWS **************************************************************************************
 
 # view agent
@@ -515,6 +525,14 @@ class BkgeClassUpdateView(FeesUpdateView):
     extra_context = {'title': 'Edit Brokerage Class'}
 
 
+@method_decorator(login_required, name="dispatch")
+class ProducerUpdateView(FeesUpdateView):
+    model = Producer
+    form_class = ProducerForm
+    success_url_name = 'fees:producers'
+    extra_context = {'title': 'Edit Producer'}
+
+
 #TODO
 # create a commit journal form with validation in the clean method
 # must ensure all accounts have been assigned to a deal, and if not, redirect
@@ -623,6 +641,13 @@ class BkgeClassCreateView(FeesCreateView):
     success_url_name = 'fees:bkgeclasses'
     extra_context = {'title': 'Create Brokerage Class'}
 
+
+@method_decorator(login_required, name="dispatch")
+class ProducerCreateView(FeesCreateView):
+    model = Producer
+    form_class = ProducerForm
+    success_url_name = 'fees:producers'
+    extra_context = {'title': 'Create Producer'}
 
 
 # DELETE VIEWS **************************************************************************************

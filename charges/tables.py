@@ -1,9 +1,9 @@
 from django_tables2 import Table, Column, TemplateColumn
-from .models import ChargeType, ChargeSchedule
+from .models import ChargeType, ChargeSchedule, Charge
 
 
 class ChargeTypeTable(Table):
-    edit = TemplateColumn(template_code="<a href={% url 'charges:type-edit' record.pk %}>Edit</a>")
+    edit = TemplateColumn(template_code="<a href={% url 'charges:type-edit' record.pk %}>Edit</a>", orderable=False)
     class Meta:
         model = ChargeType
         fields = ('code','name','bkge_class','bkge_class_filter','producer_filter')
@@ -11,7 +11,7 @@ class ChargeTypeTable(Table):
 
 
 class ChargeScheduleTable(Table):
-    edit = TemplateColumn(template_code="<a href={% url 'charges:schedule-edit' record.pk %}>Edit</a>")
+    edit = TemplateColumn(template_code="<a href={% url 'charges:schedule-edit' record.pk %}>Edit</a>", orderable=False)
     class Meta:
         model = ChargeSchedule
         fields = ['charge_type','paying_agent','receiving_agent','frequency','allow_partial_payment',
@@ -21,7 +21,7 @@ class ChargeScheduleTable(Table):
 
 class ChargeTable(Table):
     class Meta:
-        model = ChargeSchedule
+        model = Charge
         fields = ['charge_type','paying_agent','receiving_agent','total_amount',
                   'total_gst','outstanding_amount','outstanding_gst', 'priority']
         orderable = True

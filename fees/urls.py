@@ -1,17 +1,19 @@
 
 from django.urls import path
 from .views import (agent_search_view, agent_create_view, journals_search_view,
-                           journals_create_view, deals_search_view,
-                           deals_create_view, agent_view, split_create_view, journal_view,
-                           journal_detail_create_view,
-                           client_create_view, client_search_view, client_edit_view, journal_commit_view,
-                           journal_delete_view,
-                           journal_detail_delete_view, journal_upload_view, minerva_journal_commit_view,
-                           AgentListView, AgentDetailView, AgentUpdateView, AgentCreateView, DealListView,
-                           DealDetailView, DealUpdateView,
-                           SplitUpdateView, SplitCreateView, SplitDeleteView, DealCreateView, JournalListView,
-                           JournalCreateView, JournalUpdateView, JournalDetailView, JournalDeleteView, JDCreateView,
-                           JDUpdateView, JDDeleteView, BkgeClassListView, BkgeClassCreateView, BkgeClassUpdateView)
+    journals_create_view, deals_search_view,
+    deals_create_view, agent_view, split_create_view, journal_view,
+    journal_detail_create_view,
+    client_create_view, client_search_view, client_edit_view, journal_commit_view,
+    journal_delete_view,
+    journal_detail_delete_view, journal_upload_view, minerva_journal_commit_view,
+    AgentListView, AgentDetailView, AgentUpdateView, AgentCreateView, DealListView,
+    DealDetailView, DealUpdateView,
+    SplitUpdateView, SplitCreateView, SplitDeleteView, DealCreateView, JournalListView,
+    JournalCreateView, JournalUpdateView, JournalDetailView, JournalDeleteView, JDCreateView,
+    JDUpdateView, JDDeleteView, BkgeClassListView, BkgeClassCreateView, BkgeClassUpdateView,
+    ProducerListView, ProducerUpdateView, ProducerCreateView
+)
 
 app_name = 'fees'
 
@@ -68,5 +70,8 @@ urlpatterns = [
     path('bkgeclasses', BkgeClassListView.as_view(), name='bkgeclasses'),
     path('bkgeclasses/create', BkgeClassCreateView.as_view(), name='bkgeclass-create'),
     path('bkgeclasses/<int:pk>/edit', BkgeClassUpdateView.as_view(), name='bkgeclass-edit'),
+    path('producers', ProducerListView.as_view(), name='producers'),
+    path('producers/create', ProducerCreateView.as_view(), name='producer-create'),
+    path('producers/<int:pk>/edit', ProducerUpdateView.as_view(), name='producer-edit'),
 
 ]

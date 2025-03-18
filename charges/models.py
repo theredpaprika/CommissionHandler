@@ -8,8 +8,13 @@ class ChargeType(models.Model):
     code = models.CharField(max_length=10)
     name = models.CharField(max_length=50)
     bkge_class = models.ForeignKey(BkgeClass, on_delete=models.CASCADE, related_name='charge_types')
-    producer_filter = models.ForeignKey(Producer, on_delete=models.CASCADE)
-    bkge_class_filter = models.ForeignKey(BkgeClass, on_delete=models.CASCADE, related_name='charge_types_bkge_filter')
+    producer_filter = models.ForeignKey(Producer, on_delete=models.CASCADE, null=True, blank=True)
+    bkge_class_filter = models.ForeignKey(
+        BkgeClass, on_delete=models.CASCADE, related_name='charge_types_bkge_filter',
+        null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.code} - {self.name}"
 
 
 class ChargeSchedule(models.Model):
@@ -22,9 +27,12 @@ class ChargeSchedule(models.Model):
     status = models.CharField(max_length=10)
     priority = models.IntegerField(default=0)
     start_date = models.DateField()
-    end_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
     amount = models.FloatField()
     gst = models.FloatField()
+
+    def __str__(self):
+        return f"{self.charge_type}: {self.paying_agent} > {self.receiving_agent}"
 
 
 class Charge(models.Model):
@@ -39,5 +47,6 @@ class Charge(models.Model):
     status = models.CharField(max_length=10)
     priority = models.IntegerField(default=0)
 
-
+    def __str__(self):
+        return f"{self.charge_type}: {self.paying_agent} > {self.receiving_agent}"
 
