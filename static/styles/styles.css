@@ -48,18 +48,18 @@
     display: none;
     list-style-type: none;
     position: absolute;
-    background-color: var(--accent-colour);
+    background-color: var(--second-accent-colour);
     z-index: 1;
     border-radius: 6px;
     padding: 3px 3px;
     min-width: 160px;
+    border: 2px solid black;
 }
 
 .nav-item:hover .dropdown,
 .nav-item:focus-within .dropdown {
     display: block;
 }
-
 
 body {
     font-family: 'Ubuntu', 'Liberation Sans', 'DejaVu Sans', sans-serif;
@@ -134,3 +134,11 @@ input, select {
     font-size:16px;
 }
 
+.commission-period-header {
+    padding: 6px 6px;
+    margin: 6px 6px;
+    font-weight: bold;
+    color: var(--light-text);
+    border-radius: 6px;
+    background-color: var(--second-accent-colour);
+}

@@ -41,7 +41,7 @@ class CommissionPeriod(models.Model):
         return date.replace(day=last_day)
 
     def __str__(self):
-        return f"{self.end_date.strftime('%Y-%m-%d')} - {'Processed' if self.processed else 'Pending'}"
+        return f"{self.end_date.strftime('%Y-%m-%d')}"
 
 
 class Account(models.Model):
