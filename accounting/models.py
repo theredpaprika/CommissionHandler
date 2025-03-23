@@ -40,8 +40,11 @@ class CommissionPeriod(models.Model):
         last_day = calendar.monthrange(date.year, date.month)[1]
         return date.replace(day=last_day)
 
+    def get_period_fees(self, agent=None, producer=None, bkge_class=None):
+        return Entry.objects.filter(journal_detail__journal__commission_period=self).all()
+
     def __str__(self):
-        return f"{self.end_date.strftime('%Y-%m-%d')} - {'Processed' if self.processed else 'Pending'}"
+        return f"{self.end_date.strftime('%Y-%m-%d')}"
 
 
 class Account(models.Model):

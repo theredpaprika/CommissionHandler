@@ -1,6 +1,8 @@
 from django.db import models
+from django.db.models import GeneratedField
 
 from fees.models import BkgeClass, Agent, Producer
+from accounting.models import CommissionPeriod
 
 # Create your models here.
 
@@ -35,8 +37,9 @@ class ChargeSchedule(models.Model):
 
 
 class Charge(models.Model):
+    commission_period = models.ForeignKey(CommissionPeriod, on_delete=models.CASCADE, related_name='charges')
     original_charge = models.ForeignKey('self', on_delete=models.CASCADE)
-    charge_type = models.ForeignKey(ChargeType, on_delete=models.CASCADE, related_name='charges')
+    schedule = models.ForeignKey(ChargeSchedule, on_delete=models.CASCADE, related_name='charges')
     paying_agent = models.ForeignKey(Agent, on_delete=models.CASCADE, related_name='paying_charges')
     receiving_agent = models.ForeignKey(Agent, on_delete=models.CASCADE, related_name='receiving_charges')
     total_amount = models.FloatField()
@@ -44,8 +47,7 @@ class Charge(models.Model):
     outstanding_amount = models.FloatField()
     outstanding_gst = models.FloatField()
     status = models.CharField(max_length=10)
-    priority = models.IntegerField(default=0)
 
     def __str__(self):
-        return f"{self.charge_type}: {self.paying_agent} > {self.receiving_agent}"
+        return f"{self.schedule}: outstanding={self.outstanding_amount}, status={self.status}"
 

@@ -8,6 +8,9 @@
 </head>
 <body>
     {% include "header.html" %}
+    {% if request.user.is_authenticated %}
+        <div class="commission-period-header">Commission period: {{ commission_period }}</div>
+    {% endif %}
     {%  block content %}
     {% endblock %}
 </body>
