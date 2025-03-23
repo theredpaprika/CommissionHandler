@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import GeneratedField
 
 from fees.models import BkgeClass, Agent, Producer
 from accounting.models import CommissionPeriod
@@ -36,7 +37,7 @@ class ChargeSchedule(models.Model):
 
 
 class Charge(models.Model):
-    commission_period = models.ForeignKey(ChargeSchedule, on_delete=models.CASCADE, related_name='charges')
+    commission_period = models.ForeignKey(CommissionPeriod, on_delete=models.CASCADE, related_name='charges')
     original_charge = models.ForeignKey('self', on_delete=models.CASCADE)
     schedule = models.ForeignKey(ChargeSchedule, on_delete=models.CASCADE, related_name='charges')
     paying_agent = models.ForeignKey(Agent, on_delete=models.CASCADE, related_name='paying_charges')

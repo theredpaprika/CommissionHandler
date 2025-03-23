@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
-from accounting.models import Account
+from accounting.models import Account, CommissionPeriod
 from django.db.models import Sum
 from django.urls import reverse
 
@@ -88,6 +88,7 @@ class ProducerClient(models.Model):
 
 
 class Journal(models.Model):
+    commission_period = models.ForeignKey(CommissionPeriod, on_delete=models.CASCADE, related_name='journals')
     period_end_date = models.DateField()
     #created_by = models.ForeignKey(User, on_delete=models.CASCADE, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
