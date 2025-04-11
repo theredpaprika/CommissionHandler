@@ -78,6 +78,10 @@ class Journal(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(args, kwargs)
+        self.producer = None
+
     def __str__(self):
         return f"Journal Entry: {self.date} - {self.reference} - {self.description} "
 

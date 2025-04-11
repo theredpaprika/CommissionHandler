@@ -88,7 +88,7 @@ class ProducerClient(models.Model):
 
 
 class Journal(models.Model):
-    commission_period = models.ForeignKey(CommissionPeriod, on_delete=models.CASCADE, related_name='journals')
+    commission_period = models.ForeignKey(CommissionPeriod, on_delete=models.CASCADE, related_name='journals', null=True, blank=True, default=None)
     period_end_date = models.DateField()
     #created_by = models.ForeignKey(User, on_delete=models.CASCADE, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
