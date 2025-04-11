@@ -1,3 +1,6 @@
+from typing import Any
+
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
@@ -10,6 +13,7 @@ from .models import Agent, Journal, Deal, DealSplit, ProducerClient, JournalDeta
 from .forms import (AgentForm, JournalForm, DealForm, DealSplitForm, JournalDetailForm, BkgeClassForm,
                     ProducerClientForm, DeleteConfirmForm, UploadFileForm, JournalCommitConfirmForm, ProducerForm)
 from .tables import (AgentTable, DealTable, DealSplitTable, JournalTable, JDTable, BkgeClassTable, ProducerTable)
+from accounting.models import CommissionPeriod
 
 from files import file_manager
 
@@ -340,7 +344,7 @@ class FeesListView(SingleTableView):
     template_name = 'single_table_template.html'
     context_object_name = 'object'
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super(FeesListView, self).get_context_data(**kwargs)
         context.update(self.context_data)
         return context
@@ -403,7 +407,7 @@ class AgentDetailView(SingleTableMixin, DetailView):
     template_name = 'fees/agent_detail.html'
     table_class = DealTable
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         context['table_heading'] = 'Deals'
         context['title'] = f'Agent {self.object}'
@@ -702,7 +706,7 @@ class JDDeleteView(FeesDeleteView):
 @login_required
 def journal_upload_view(request, pk):
 
-    template = 'fees/journal_upload.html'
+    template = 'files/file_upload.html'
     journal = Journal.objects.get(id=pk)
     form = UploadFileForm(request.POST or None, request.FILES)
     context = {'form': form, 'journal': journal}
@@ -735,3 +739,13 @@ def journal_upload_view(request, pk):
         """
 
     return render(request, template, context=context)
+
+
+@login_required
+def journal_commit(request, pk):
+    journal = Journal.objects.get(id=pk)
+    if journal and journal.status == 'OPEN':
+        journal.commission_period = CommissionPeriod.get_current_period()
+        journal.status = 'CLOSED'
+
+

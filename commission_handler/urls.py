@@ -24,6 +24,7 @@ urlpatterns = [
     path('fees/', include('fees.urls')),
     path('accounting/', include('accounting.urls')),
     path('charges/', include('charges.urls')),
+    path('files/', include('files.urls')),
 
     path('admin/', admin.site.urls),
     path('register/', register_view),

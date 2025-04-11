@@ -20,7 +20,7 @@ class JournalForm(forms.ModelForm):
 class JournalDetailForm(forms.ModelForm):
     class Meta:
         model = JournalDetail
-        exclude = ['journal']
+        exclude = ['related_charge','journal']
         widgets = {'class': 'form-control'}
         fields = '__all__'
 
