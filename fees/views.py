@@ -5,7 +5,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 
-from django.views.generic import ListView, DetailView, UpdateView, DeleteView, CreateView
+from django.views.generic import ListView, DetailView, UpdateView, DeleteView, CreateView, TemplateView
 from django_tables2 import SingleTableView, MultiTableMixin, SingleTableMixin
 from django.urls import reverse_lazy, reverse
 
@@ -14,6 +14,7 @@ from .forms import (AgentForm, JournalForm, DealForm, DealSplitForm, JournalDeta
                     ProducerClientForm, DeleteConfirmForm, UploadFileForm, JournalCommitConfirmForm, ProducerForm)
 from .tables import (AgentTable, DealTable, DealSplitTable, JournalTable, JDTable, BkgeClassTable, ProducerTable)
 from accounting.models import CommissionPeriod
+from .filters import ProducerClientFilter
 
 from files import file_manager
 
@@ -349,6 +350,7 @@ class FeesListView(SingleTableView):
         context.update(self.context_data)
         return context
 
+
 @method_decorator(login_required, name="dispatch")
 class AgentListView(FeesListView):
     model = Agent
@@ -357,6 +359,21 @@ class AgentListView(FeesListView):
         'create_link': reverse_lazy('fees:agent-create'),
         'title': 'Agents'
     }
+
+
+method_decorator(login_required, name="dispatch")
+class ProducerClientListView(TemplateView):
+    template_name = 'fees/producer_clients_search.html'
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        unassigned_clients = ProducerClient.objects.filter(deal=None).all()
+        clients_qs = ProducerClient.objects.all()
+        client_filter = ProducerClientFilter(self.request.GET, queryset=clients_qs)
+        context['unassigned_clients'] = unassigned_clients
+        context['client_filter'] = client_filter
+        context['clients_list'] = client_filter.qs
+        #context['create_link'] = reverse('fees:client-create')
+        return context
 
 
 @method_decorator(login_required, name="dispatch")
@@ -580,6 +597,13 @@ class FeesCreateView(CreateView):
             return super().form_valid(form)
 
 
+class ProducerClientCreateView(CreateView):
+    model = ProducerClient
+    form_class = ProducerClientForm
+    success_url_name = 'fees:clients'
+
+
+
 @method_decorator(login_required, name="dispatch")
 class AgentCreateView(FeesCreateView):
     model = Agent
@@ -630,12 +654,6 @@ class JDCreateView(FeesCreateView):
         producer = Journal.objects.get(id=self.kwargs.get('journal_id')).producer
         kwargs['producer_context'] = producer
         return kwargs
-
-
-@method_decorator(login_required, name="dispatch")
-class JournalCommitView(UpdateView):
-    model = Journal
-    form_class = JournalForm
 
 
 @method_decorator(login_required, name="dispatch")
@@ -701,7 +719,14 @@ class JDDeleteView(FeesDeleteView):
     cancel_link_name = 'fees:journal-detail'
 
 
-# ----------------------- JOURNAL UPLOAD ------------------------------------
+# ----------------------- OTHER VIEWS ------------------------------------
+
+
+@method_decorator(login_required, name="dispatch")
+class JournalCommitView(UpdateView):
+    model = Journal
+    form_class = JournalForm
+
 
 @login_required
 def journal_upload_view(request, pk):
