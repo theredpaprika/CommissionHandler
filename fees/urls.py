@@ -12,7 +12,7 @@ from .views import (agent_search_view, agent_create_view, journals_search_view,
     SplitUpdateView, SplitCreateView, SplitDeleteView, DealCreateView, JournalListView,
     JournalCreateView, JournalUpdateView, JournalDetailView, JournalDeleteView, JDCreateView,
     JDUpdateView, JDDeleteView, BkgeClassListView, BkgeClassCreateView, BkgeClassUpdateView,
-    ProducerListView, ProducerUpdateView, ProducerCreateView, ProducerClientListView
+    ProducerListView, ProducerUpdateView, ProducerCreateView, ProducerClientListView, ProducerClientCreateView
 )
 
 app_name = 'fees'
@@ -51,6 +51,7 @@ urlpatterns = [
     path('agents/<int:pk>', AgentDetailView.as_view(), name='agent-detail'),
     path('agents/<int:pk>/edit', AgentUpdateView.as_view(), name='agent-edit'),
     path('clients/', ProducerClientListView.as_view(), name='clients'),
+    path('clients/create', ProducerClientCreateView.as_view(), name='client-create'),
     path('deals/', DealListView.as_view(), name='deals'),
     path('agents/<int:agent_id>/deals/create', DealCreateView.as_view(), name='deal-create'),
     path('deals/<int:pk>', DealDetailView.as_view(), name='deal-detail'),

@@ -361,7 +361,7 @@ class AgentListView(FeesListView):
     }
 
 
-method_decorator(login_required, name="dispatch")
+@method_decorator(login_required, name="dispatch")
 class ProducerClientListView(TemplateView):
     template_name = 'fees/producer_clients_search.html'
     def get_context_data(self, **kwargs):
@@ -372,7 +372,7 @@ class ProducerClientListView(TemplateView):
         context['unassigned_clients'] = unassigned_clients
         context['client_filter'] = client_filter
         context['clients_list'] = client_filter.qs
-        #context['create_link'] = reverse('fees:client-create')
+        context['create_link'] = reverse('fees:client-create')
         return context
 
 
@@ -597,11 +597,11 @@ class FeesCreateView(CreateView):
             return super().form_valid(form)
 
 
-class ProducerClientCreateView(CreateView):
+class ProducerClientCreateView(FeesCreateView):
     model = ProducerClient
     form_class = ProducerClientForm
     success_url_name = 'fees:clients'
-
+    extra_context = {'title': 'Create Client'}
 
 
 @method_decorator(login_required, name="dispatch")
