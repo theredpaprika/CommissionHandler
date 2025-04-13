@@ -367,11 +367,11 @@ class ProducerClientListView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         unassigned_clients = ProducerClient.objects.filter(deal=None).all()
-        clients_qs = ProducerClient.objects.all()
+        clients_qs = ProducerClient.objects.filter(deal__isnull=False).all()
         client_filter = ProducerClientFilter(self.request.GET, queryset=clients_qs)
         context['unassigned_clients'] = unassigned_clients
         context['client_filter'] = client_filter
-        context['clients_list'] = client_filter.qs
+        context['client_list'] = client_filter.qs
         context['create_link'] = reverse('fees:client-create')
         return context
 
@@ -587,16 +587,14 @@ class FeesCreateView(CreateView):
 
     def form_valid(self, form):
         # if no form kwargs, just submit form
-        if not self.form_kwargs:
-            return super().form_valid(form)
-        else:
-            instance = form.save(commit=False)
+        if self.form_kwargs:
             # update model instance with values from form_kwargs
             for key, value in self.form_kwargs.items():
-                if hasattr(instance, key):
-                    setattr(instance, key, value)
-            instance.save()
-            return super().form_valid(form)
+                print(key,value)
+                if form.instance._meta.get_field(key):
+                    set_value = value(self) if callable(value) else value
+                    setattr(form.instance, key, set_value)
+        return super().form_valid(form)
 
 
 class ProducerClientCreateView(FeesCreateView):
@@ -604,11 +602,7 @@ class ProducerClientCreateView(FeesCreateView):
     form_class = ProducerClientForm
     success_url_name = 'fees:clients'
     extra_context = {'title': 'Create Client'}
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        self.form_kwargs = {'created_by': self.request.user}
-        return kwargs
+    form_kwargs = {'created_by': lambda self: self.request.user, }
 
     #def dispatch(self, request, *args, **kwargs):
     #    # adds request user to form_kwargs before executing form_valid
