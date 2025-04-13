@@ -1,5 +1,5 @@
 from typing import Any
-
+import datetime as dt
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -590,10 +590,12 @@ class FeesCreateView(CreateView):
         if not self.form_kwargs:
             return super().form_valid(form)
         else:
-            form.save(commit=False)
+            instance = form.save(commit=False)
             # update model instance with values from form_kwargs
             for key, value in self.form_kwargs.items():
-                setattr(form.instance, key, self.kwargs.get(value))
+                if hasattr(instance, key):
+                    setattr(instance, key, value)
+            instance.save()
             return super().form_valid(form)
 
 
@@ -602,6 +604,15 @@ class ProducerClientCreateView(FeesCreateView):
     form_class = ProducerClientForm
     success_url_name = 'fees:clients'
     extra_context = {'title': 'Create Client'}
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        self.form_kwargs = {'created_by': self.request.user}
+        return kwargs
+
+    #def dispatch(self, request, *args, **kwargs):
+    #    # adds request user to form_kwargs before executing form_valid
+    #    self.form_kwargs = {'created_by': request.user}
 
 
 @method_decorator(login_required, name="dispatch")
