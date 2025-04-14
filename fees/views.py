@@ -588,7 +588,7 @@ class FeesCreateView(CreateView):
     related_field = None
     success_url_name = None
     template_name = 'single_form_template.html'
-    form_kwargs = None
+    initial_model_attrs = {}
 
     def get_success_url(self):
         if not self.related_field:
@@ -597,15 +597,22 @@ class FeesCreateView(CreateView):
         return reverse(self.success_url_name, kwargs={'pk': related_object.id})
 
     def form_valid(self, form):
-        # if no form kwargs, just submit form
-        if self.form_kwargs:
-            # update model instance with values from form_kwargs
-            for key, value in self.form_kwargs.items():
-                print(key,value)
-                if form.instance._meta.get_field(key):
-                    set_value = value(self) if callable(value) else value
-                    setattr(form.instance, key, set_value)
+        obj = form.save(commit=False)
+
+        for field, source in self.initial_model_attrs.items():
+            value = self._resolve_source(source)
+            if hasattr(obj, field):
+                setattr(obj, field, value)
+        obj.save()
         return super().form_valid(form)
+
+    def _resolve_source(self, source):
+        """Helper to resolve different types of sources."""
+        if isinstance(source, str):
+            return self.kwargs.get(source)
+        elif callable(source):
+            return source(self)
+        return source
 
 
 class ProducerClientCreateView(FeesCreateView):
@@ -663,12 +670,13 @@ class JDCreateView(FeesCreateView):
     success_url_name = 'fees:journal-detail'
     related_field = 'journal'
     extra_context = {'title': 'Create Journal Detail'}
-    form_kwargs = {'journal_id': 'journal_id'}
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        producer = Journal.objects.get(id=self.kwargs.get('journal_id')).producer
-        kwargs['producer_context'] = producer
+        journal_id = self.kwargs.get('journal_id')
+        journal = Journal.objects.get(id=journal_id)
+        kwargs['journal'] = journal
+        kwargs['producer_context'] = journal.producer
         return kwargs
 
 

@@ -36,10 +36,20 @@ class JournalDetailForm(FeesForm):
         fields = '__all__'
 
     def __init__(self, *args, **kwargs):
+
+        self.journal = kwargs.pop('journal', None)
         producer = kwargs.pop('producer_context', None)
-        print(producer)
         super().__init__(*args, **kwargs)
         self.fields['client_account_code'].queryset = ProducerClient.objects.filter(producer=producer).all()
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self.journal:
+            instance.journal = self.journal
+        if commit:
+            instance.save()
+        return instance
+
 
 class DealForm(FeesForm):
     class Meta:
