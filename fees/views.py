@@ -636,7 +636,9 @@ class DealCreateView(FeesCreateView):
     success_url_name = 'fees:agent-detail'
     related_field = 'agent'
     extra_context = {'title':'Create Deal'}
-    form_kwargs = {'agent_id': 'agent_id'}
+
+    def _initial_model_attrs(self):
+        return {'agent_id': self.kwargs.get('agent_id')}
 
 
 @method_decorator(login_required, name="dispatch")
@@ -646,7 +648,9 @@ class SplitCreateView(FeesCreateView):
     success_url_name = 'fees:deal-detail'
     related_field = 'deal'
     extra_context = {'title':'Create Split'}
-    form_kwargs = {'deal_id': 'deal_id'}
+
+    def _initial_model_attrs(self):
+        return {'deal_id': self.kwargs.get('deal_id')}
 
 
 @method_decorator(login_required, name="dispatch")
