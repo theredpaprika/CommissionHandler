@@ -620,11 +620,7 @@ class ProducerClientCreateView(FeesCreateView):
     form_class = ProducerClientForm
     success_url_name = 'fees:clients'
     extra_context = {'title': 'Create Client'}
-    form_kwargs = {'created_by': lambda self: self.request.user, }
-
-    #def dispatch(self, request, *args, **kwargs):
-    #    # adds request user to form_kwargs before executing form_valid
-    #    self.form_kwargs = {'created_by': request.user}
+    initial_model_attrs = {'created_by': lambda self: self.request.user, }
 
 
 @method_decorator(login_required, name="dispatch")
