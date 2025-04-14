@@ -590,6 +590,10 @@ class FeesCreateView(CreateView):
     template_name = 'single_form_template.html'
     initial_model_attrs = {}
 
+    def _initial_model_attrs(self):
+        # override on child class with changes you want to make to model instance field
+        return None
+
     def get_success_url(self):
         if not self.related_field:
             return reverse_lazy(self.success_url_name)
@@ -597,22 +601,15 @@ class FeesCreateView(CreateView):
         return reverse(self.success_url_name, kwargs={'pk': related_object.id})
 
     def form_valid(self, form):
-        obj = form.save(commit=False)
-
-        for field, source in self.initial_model_attrs.items():
-            value = self._resolve_source(source)
-            if hasattr(obj, field):
-                setattr(obj, field, value)
-        obj.save()
+        # check if child class specifies amendments to model fields
+        if extra_model_attrs := self._initial_model_attrs():
+            obj = form.save(commit=False)
+            # edit fields
+            for field, value in extra_model_attrs.items():
+                if hasattr(obj, field):
+                    setattr(obj, field, value)
+            obj.save()
         return super().form_valid(form)
-
-    def _resolve_source(self, source):
-        """Helper to resolve different types of sources."""
-        if isinstance(source, str):
-            return self.kwargs.get(source)
-        elif callable(source):
-            return source(self)
-        return source
 
 
 class ProducerClientCreateView(FeesCreateView):
@@ -620,8 +617,9 @@ class ProducerClientCreateView(FeesCreateView):
     form_class = ProducerClientForm
     success_url_name = 'fees:clients'
     extra_context = {'title': 'Create Client'}
-    initial_model_attrs = {'created_by': lambda self: self.request.user, }
 
+    def _initial_model_attrs(self):
+        return {'created_by_id': self.request.user.id}
 
 @method_decorator(login_required, name="dispatch")
 class AgentCreateView(FeesCreateView):
