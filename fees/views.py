@@ -1,19 +1,21 @@
 from typing import Any
-
+import datetime as dt
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 
-from django.views.generic import ListView, DetailView, UpdateView, DeleteView, CreateView
+from django.views.generic import ListView, DetailView, UpdateView, DeleteView, CreateView, TemplateView
 from django_tables2 import SingleTableView, MultiTableMixin, SingleTableMixin
 from django.urls import reverse_lazy, reverse
 
 from .models import Agent, Journal, Deal, DealSplit, ProducerClient, JournalDetail, Producer, Entry, BkgeClass
 from .forms import (AgentForm, JournalForm, DealForm, DealSplitForm, JournalDetailForm, BkgeClassForm,
                     ProducerClientForm, DeleteConfirmForm, UploadFileForm, JournalCommitConfirmForm, ProducerForm)
-from .tables import (AgentTable, DealTable, DealSplitTable, JournalTable, JDTable, BkgeClassTable, ProducerTable)
+from .tables import (AgentTable, DealTable, DealSplitTable, JournalTable,
+                     ProducerClientTable, JDTable, BkgeClassTable, ProducerTable)
 from accounting.models import CommissionPeriod
+from .filters import ProducerClientFilter
 
 from files import file_manager
 
@@ -349,6 +351,7 @@ class FeesListView(SingleTableView):
         context.update(self.context_data)
         return context
 
+
 @method_decorator(login_required, name="dispatch")
 class AgentListView(FeesListView):
     model = Agent
@@ -357,6 +360,23 @@ class AgentListView(FeesListView):
         'create_link': reverse_lazy('fees:agent-create'),
         'title': 'Agents'
     }
+
+
+@method_decorator(login_required, name="dispatch")
+class ProducerClientListView(TemplateView):
+    template_name = 'fees/producer_clients_search.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        unassigned_clients = ProducerClient.objects.filter(deal=None).all()
+        clients_qs = ProducerClient.objects.filter(deal__isnull=False).all()
+        client_filter = ProducerClientFilter(self.request.GET, queryset=clients_qs)
+        context['title'] = 'Producer Clients'
+        context['unassigned_clients_table'] = ProducerClientTable(unassigned_clients)
+        context['client_filter'] = client_filter
+        context['clients_table'] = ProducerClientTable(client_filter.qs)
+        context['create_link'] = reverse('fees:client-create')
+        return context
 
 
 @method_decorator(login_required, name="dispatch")
@@ -472,6 +492,14 @@ class FeesUpdateView(UpdateView):
         return reverse(self.success_url_name, kwargs={'pk': related_object.id})
 
 
+@method_decorator(login_required, name="dispatch")
+class ProducerClientUpdateView(FeesUpdateView):
+    model = ProducerClient
+    form_class = ProducerClientForm
+    success_url_name = 'fees:clients'
+    extra_context = {'title': 'Edit Producer Client'}
+
+
 # edit agent
 @method_decorator(login_required, name="dispatch")
 class AgentUpdateView(FeesUpdateView):
@@ -560,7 +588,11 @@ class FeesCreateView(CreateView):
     related_field = None
     success_url_name = None
     template_name = 'single_form_template.html'
-    form_kwargs = None
+    initial_model_attrs = {}
+
+    def _initial_model_attrs(self):
+        # override on child class with changes you want to make to model instance field
+        return None
 
     def get_success_url(self):
         if not self.related_field:
@@ -569,16 +601,25 @@ class FeesCreateView(CreateView):
         return reverse(self.success_url_name, kwargs={'pk': related_object.id})
 
     def form_valid(self, form):
-        # if no form kwargs, just submit form
-        if not self.form_kwargs:
-            return super().form_valid(form)
-        else:
-            form.save(commit=False)
-            # update model instance with values from form_kwargs
-            for key, value in self.form_kwargs.items():
-                setattr(form.instance, key, self.kwargs.get(value))
-            return super().form_valid(form)
+        # check if child class specifies amendments to model fields
+        if extra_model_attrs := self._initial_model_attrs():
+            obj = form.save(commit=False)
+            # edit fields
+            for field, value in extra_model_attrs.items():
+                if hasattr(obj, field):
+                    setattr(obj, field, value)
+            obj.save()
+        return super().form_valid(form)
 
+
+class ProducerClientCreateView(FeesCreateView):
+    model = ProducerClient
+    form_class = ProducerClientForm
+    success_url_name = 'fees:clients'
+    extra_context = {'title': 'Create Client'}
+
+    def _initial_model_attrs(self):
+        return {'created_by_id': self.request.user.id}
 
 @method_decorator(login_required, name="dispatch")
 class AgentCreateView(FeesCreateView):
@@ -595,7 +636,9 @@ class DealCreateView(FeesCreateView):
     success_url_name = 'fees:agent-detail'
     related_field = 'agent'
     extra_context = {'title':'Create Deal'}
-    form_kwargs = {'agent_id': 'agent_id'}
+
+    def _initial_model_attrs(self):
+        return {'agent_id': self.kwargs.get('agent_id')}
 
 
 @method_decorator(login_required, name="dispatch")
@@ -605,7 +648,9 @@ class SplitCreateView(FeesCreateView):
     success_url_name = 'fees:deal-detail'
     related_field = 'deal'
     extra_context = {'title':'Create Split'}
-    form_kwargs = {'deal_id': 'deal_id'}
+
+    def _initial_model_attrs(self):
+        return {'deal_id': self.kwargs.get('deal_id')}
 
 
 @method_decorator(login_required, name="dispatch")
@@ -623,19 +668,14 @@ class JDCreateView(FeesCreateView):
     success_url_name = 'fees:journal-detail'
     related_field = 'journal'
     extra_context = {'title': 'Create Journal Detail'}
-    form_kwargs = {'journal_id': 'journal_id'}
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        producer = Journal.objects.get(id=self.kwargs.get('journal_id')).producer
-        kwargs['producer_context'] = producer
+        journal_id = self.kwargs.get('journal_id')
+        journal = Journal.objects.get(id=journal_id)
+        kwargs['journal'] = journal
+        kwargs['producer_context'] = journal.producer
         return kwargs
-
-
-@method_decorator(login_required, name="dispatch")
-class JournalCommitView(UpdateView):
-    model = Journal
-    form_class = JournalForm
 
 
 @method_decorator(login_required, name="dispatch")
@@ -701,7 +741,14 @@ class JDDeleteView(FeesDeleteView):
     cancel_link_name = 'fees:journal-detail'
 
 
-# ----------------------- JOURNAL UPLOAD ------------------------------------
+# ----------------------- OTHER VIEWS ------------------------------------
+
+
+@method_decorator(login_required, name="dispatch")
+class JournalCommitView(UpdateView):
+    model = Journal
+    form_class = JournalForm
+
 
 @login_required
 def journal_upload_view(request, pk):
