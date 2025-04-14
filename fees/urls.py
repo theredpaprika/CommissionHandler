@@ -12,7 +12,8 @@ from .views import (agent_search_view, agent_create_view, journals_search_view,
     SplitUpdateView, SplitCreateView, SplitDeleteView, DealCreateView, JournalListView,
     JournalCreateView, JournalUpdateView, JournalDetailView, JournalDeleteView, JDCreateView,
     JDUpdateView, JDDeleteView, BkgeClassListView, BkgeClassCreateView, BkgeClassUpdateView,
-    ProducerListView, ProducerUpdateView, ProducerCreateView, ProducerClientListView, ProducerClientCreateView
+    ProducerListView, ProducerUpdateView, ProducerCreateView, ProducerClientListView, ProducerClientCreateView,
+    ProducerClientUpdateView
 )
 
 app_name = 'fees'
@@ -20,7 +21,7 @@ app_name = 'fees'
 urlpatterns = [
     # LOOKING TO REPLACE THESE WITH CBVs
     #path('clients/', client_search_view, name='clients'),
-    path('clients/<str:client_code>/edit', client_edit_view, name='clientedit'),
+    #path('clients/<str:client_code>/edit', client_edit_view, name='clientedit'),
     #path('agents/', agent_search_view, name='agents'),
     #path('agents/create', agent_create_view, name='agentcreate'),
     #path('agents/<str:agent_code>', agent_view, name='agent'),
@@ -52,6 +53,7 @@ urlpatterns = [
     path('agents/<int:pk>/edit', AgentUpdateView.as_view(), name='agent-edit'),
     path('clients/', ProducerClientListView.as_view(), name='clients'),
     path('clients/create', ProducerClientCreateView.as_view(), name='client-create'),
+    path('clients/<int:pk>/edit', ProducerClientUpdateView.as_view(), name='client-edit'),
     path('deals/', DealListView.as_view(), name='deals'),
     path('agents/<int:agent_id>/deals/create', DealCreateView.as_view(), name='deal-create'),
     path('deals/<int:pk>', DealDetailView.as_view(), name='deal-detail'),

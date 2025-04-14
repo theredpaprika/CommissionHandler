@@ -12,7 +12,8 @@ from django.urls import reverse_lazy, reverse
 from .models import Agent, Journal, Deal, DealSplit, ProducerClient, JournalDetail, Producer, Entry, BkgeClass
 from .forms import (AgentForm, JournalForm, DealForm, DealSplitForm, JournalDetailForm, BkgeClassForm,
                     ProducerClientForm, DeleteConfirmForm, UploadFileForm, JournalCommitConfirmForm, ProducerForm)
-from .tables import (AgentTable, DealTable, DealSplitTable, JournalTable, JDTable, BkgeClassTable, ProducerTable)
+from .tables import (AgentTable, DealTable, DealSplitTable, JournalTable,
+                     ProducerClientTable, JDTable, BkgeClassTable, ProducerTable)
 from accounting.models import CommissionPeriod
 from .filters import ProducerClientFilter
 
@@ -364,14 +365,16 @@ class AgentListView(FeesListView):
 @method_decorator(login_required, name="dispatch")
 class ProducerClientListView(TemplateView):
     template_name = 'fees/producer_clients_search.html'
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         unassigned_clients = ProducerClient.objects.filter(deal=None).all()
         clients_qs = ProducerClient.objects.filter(deal__isnull=False).all()
         client_filter = ProducerClientFilter(self.request.GET, queryset=clients_qs)
-        context['unassigned_clients'] = unassigned_clients
+        context['title'] = 'Producer Clients'
+        context['unassigned_clients_table'] = ProducerClientTable(unassigned_clients)
         context['client_filter'] = client_filter
-        context['client_list'] = client_filter.qs
+        context['clients_table'] = ProducerClientTable(client_filter.qs)
         context['create_link'] = reverse('fees:client-create')
         return context
 
@@ -487,6 +490,14 @@ class FeesUpdateView(UpdateView):
             return reverse_lazy(self.success_url_name)
         related_object = getattr(self.object, self.related_field)
         return reverse(self.success_url_name, kwargs={'pk': related_object.id})
+
+
+@method_decorator(login_required, name="dispatch")
+class ProducerClientUpdateView(FeesUpdateView):
+    model = ProducerClient
+    form_class = ProducerClientForm
+    success_url_name = 'fees:clients'
+    extra_context = {'title': 'Edit Producer Client'}
 
 
 # edit agent

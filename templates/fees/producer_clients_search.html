@@ -1,57 +1,13 @@
 {%  extends "base.html" %}
+{%  load django_tables2 %}
+
 {%  block content %}
-    <h1>{{ Clients }}</h1>
+    <h1>{{ title }}</h1>
     {% if create_link is not None %}
         <a class="button-style" href="{{ create_link }}">Create New</a>
     {% endif %}
     <h2>Unassigned Clients</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Client Code</th>
-                <th>Producer</th>
-                <th>Name</th>
-                <th>Deal</th>
-                <th>Edit</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for obj in unassigned_clients %}
-                <tr>
-                    <td>{{ obj.client_code }}</td>
-                    <td>{{ obj.producer }}</td>
-                    <td>{{ obj.name }}</td>
-                    <td>{{ obj.deal }}</td>
-                </tr>
-            {%  endfor %}
-        </tbody>
-    </table>
-
+    {% render_table unassigned_clients_table %}
     <h2>Clients</h2>
-    <form method="get">
-        {{ client_filter.form.as_p }}
-        <input type="submit" value="Filter">
-    </form>
-    <table>
-        <thead>
-            <tr>
-                <th>Client Code</th>
-                <th>Producer</th>
-                <th>Name</th>
-                <th>Deal</th>
-                <th>Edit</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for obj in client_list %}
-                <tr>
-                    <td>{{ obj.client_code }}</td>
-                    <td>{{ obj.producer }}</td>
-                    <td>{{ obj.name }}</td>
-                    <td>{{ obj.deal }}</td>
-                </tr>
-            {%  endfor %}
-        </tbody>
-    </table>
+    {% render_table clients_table %}
 {%  endblock %}
-

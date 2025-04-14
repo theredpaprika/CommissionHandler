@@ -1,7 +1,7 @@
 
 from django_tables2 import Table, Column, TemplateColumn
 
-from .models import Agent, Deal, DealSplit, Journal, JournalDetail, BkgeClass, Producer
+from .models import Agent, Deal, DealSplit, Journal, JournalDetail, BkgeClass, Producer, ProducerClient
 
 class AgentTable(Table):
     agent_code = Column(linkify=True)
@@ -63,4 +63,12 @@ class ProducerTable(Table):
     class Meta:
         model = Producer
         fields = ('code','name')
+        orderable = True
+
+
+class ProducerClientTable(Table):
+    edit = TemplateColumn(template_code="<a href={% url 'fees:client-edit' record.pk %}>Edit</a>", orderable=False)
+    class Meta:
+        model = ProducerClient
+        fields = ('client_code','producer', 'name', 'deal')
         orderable = True
