@@ -31,7 +31,6 @@ class CommissionPeriod(models.Model):
         next_month_date = current_period.end_date + timedelta(days=1)  # First day of next month
         next_last_day = cls.get_last_day_of_month(next_month_date)
         new_period, created = cls.objects.get_or_create(end_date=next_last_day)
-
         return new_period
 
     @staticmethod
