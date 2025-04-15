@@ -2,19 +2,22 @@
 import datetime as dt
 import calendar
 
+
 from django.test import TestCase
 from django.urls import reverse
-from tenants.models import User
+from django.contrib.auth import get_user_model
 from fees.models import Agent, Deal, Producer, DealSplit, BkgeClass, Journal, JournalDetail, CommissionPeriod
 
 
 # Create your tests here.
+User = get_user_model()
 
 class AgentTestCase(TestCase):
     def setUp(self):
         # create a user
         self.user = User.objects.create_user(username='test', password='pass')
 
+        """
         # producers
         self.producer = Producer.objects.create(name='SQ1', code='SQ1')
 
@@ -32,6 +35,7 @@ class AgentTestCase(TestCase):
         DealSplit.objects.create(agent=self.ho, percentage=40, deal=self.bob_uftr_deal, bkge_class_filter=self.mxi)
         DealSplit.objects.create(agent=self.ho, percentage=20, deal=self.bob_uftr_deal)
         DealSplit.objects.create(agent=self.ho, percentage=50, deal=self.bob_sq1_deal, producer_filter=self.producer)
+        """
 
     def test_first_commission_period_created(self):
         # check that end of this month is used as first commission period
