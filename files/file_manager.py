@@ -82,7 +82,7 @@ The functions output the UploadedFileBase.data dataframe after making transforma
 def _sfg(file):
     b = parsing.FileBase(file)
     b.header_row = 11
-    b.process_xlsx('Sheet1')
+    b.process_xlsx('Sheet1', engine='xlrd')
     b.data = parsing.drop_cols_by_name(b.data, 'Unnamed')
     b.data = parsing.column_fill(b.data, 'Lender Ref No.', 'Adviser',
            "Client.isnull() and `Lender Ref No.` not in ['New Business','On-Going','Sub Total']")
@@ -98,14 +98,15 @@ def _sfg(file):
             'Payment': 'amount',
             'GST': 'gst',
             'Commission': 'lender_amount',
+            'Original Broker': 'external_adviser',
             'lender_gst': 'lender_gst',
             'Lender': 'product', 'Loan Amt': 'loan_limit',
             'Loan Bal': 'balance', 'bkge_code': 'bkge_code'})
 def _sq1(file):
     b = parsing.FileBase(file)
-    b.header_row = 0
-    b.skip_footer = -2
-    b.process_html(2)
+    b.header_row = 5
+    b.skip_footer = -1
+    b.process_xlsx('Sheet1', engine='openpyxl')
     b.data['Account Number'] = b.data['Account Number'].fillna('0')
     b.data.loc[b.data['Account Number'] == '0', 'Borrower'] = \
         b.data.loc[b.data['Account Number'] == '0', 'Loan Bal']
@@ -114,7 +115,7 @@ def _sq1(file):
         b.data[col] = b.data[col].astype(float)
     b.data['lender_gst'] = b.data['GST'] / b.data['Comm Rate']
     bkg = {'Trails': 'MXO', 'Upfront': 'MXI'}
-    b.data['bkge_code'] = bkg[b.raw_data[1][1][0]]
+    b.data['bkge_code'] = bkg[b.raw_data['Sheet1'].values[3][1]]
     return b.data
 
 
@@ -149,7 +150,7 @@ def _finsure(file):
 def _sfg2(file):
     b = parsing.FileBase(file)
     b.header_row = 0
-    b.process_xlsx(r'(Upfront|Clawback|Trail) Details')
+    b.process_xlsx(r'(Upfront|Clawback|Trail) Details', engine='openpyxl')
     bkg = {'Upfront Details': 'MXI', 'Trail Details': 'MXO', 'Clawback Details': 'MXR'}
     b.data['bkge_code'] = b.data['tab_name'].map(bkg)
     return b.data
