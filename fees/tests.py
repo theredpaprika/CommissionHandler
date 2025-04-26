@@ -14,6 +14,12 @@ from fees.models import Agent, Deal, Producer, DealSplit, BkgeClass, Journal, Jo
 User = get_user_model()
 
 class DotenvTestCase(TestCase):
+
+    def setUp(self):
+        # create a user
+        self.user = User.objects.create_user(username='test', password='pass')
+        self.client.login(username='test', password='pass')
+
     def test_env_file_exists_and_has_secret_key(self):
         env_path = Path(settings.BASE_DIR) / '.env'
         self.assertTrue(env_path.exists(), f".env file is missing at {env_path}")
@@ -25,12 +31,6 @@ class DotenvTestCase(TestCase):
     def test_secret_key_is_loaded_into_environment(self):
         secret = os.getenv('SECRET_KEY')
         self.assertTrue(secret, "SECRET_KEY is not set in the environment")
-
-
-class AgentTestCase(TestCase):
-    def setUp(self):
-        # create a user
-        self.user = User.objects.create_user(username='test', password='pass')
 
     def test_first_commission_period_created(self):
         # check that end of this month is used as first commission period
@@ -45,9 +45,33 @@ class AgentTestCase(TestCase):
         self.assertEqual(old_period.processed, True)
         self.assertEqual(old_period.end_date, new_period.end_date.replace(day=1)-dt.timedelta(1))
 
+    def test_bkge_classes_created(self):
+        data = {
+            'code': 'MXO',
+            'name': 'Mortgage Trail Ongoing'
+        }
+        path = reverse('fees:bkgeclass-create')
+        response = self.client.post(path, data)
+        self.assertEqual(response.status_code, 302)
+        data = {
+            'code': 'MXI',
+            'name': 'Mortgage Upfront'
+        }
+        response = self.client.post(path, data)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(BkgeClass.objects.count(), 2)
+
+    def test_producer_created(self):
+        data = {
+            'code': 'SQ1',
+            'name': 'Square One',
+        }
+        response = self.client.post(reverse('fees:producer-create'), data)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Producer.objects.count(), 1)
+
     def test_agent_created(self):
         # check if 'head office' agent successfully creates when submitting form
-        self.client.login(username='test', password='pass')
         data = {
             'agent_code': 'HO1',
             'first_name': 'Head',
@@ -65,6 +89,42 @@ class AgentTestCase(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Agent.objects.count(), 1) # HO1
 
+        data2 = {
+            'agent_code': 'JON',
+            'first_name': 'John',
+            'last_name': 'Doe',
+            'abn': '123456782',
+            'address_1': '1 Happy Street',
+            'email': 'headoffice@example.com',
+            'suburb': 'HAPPYLAND',
+            'postcode': '12345',
+            'is_gst_exempt': False,
+            'is_external': False
+        }
+        response = self.client.post(path, data=data2)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Agent.objects.count(), 2) # JON
 
+    def test_deal_created(self):
+        agent = Agent.objects.filter(agent_code='JON').first()
+        data = {
+            'code': 'JONUF',
+            'name': 'John Upfront Only',
+            'agent_id': agent.id,
+        }
+        path = reverse('fees:deal-create')
+        response = self.client.post(path, data=data)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Deal.objects.count(), 1)
 
-
+    def test_splits_created(self):
+        deal = Deal.objects.filter(code='JONUF').first()
+        data = {
+            'code': 'JONUF',
+            'name': 'John Upfront Only',
+            'agent_id': agent.id,
+        }
+        path = reverse('fees:deal-create')
+        response = self.client.post(path, data=data)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Deal.objects.count(), 1)
