@@ -105,7 +105,7 @@ def _sfg(file):
 def _sq1(file):
     b = parsing.FileBase(file)
     b.header_row = 5
-    b.skip_footer = -1
+    b.skip_footer = 1
     b.process_xlsx('Sheet1', engine='openpyxl')
     b.data['Account Number'] = b.data['Account Number'].fillna('0')
     b.data.loc[b.data['Account Number'] == '0', 'Borrower'] = \

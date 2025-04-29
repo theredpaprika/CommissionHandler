@@ -64,12 +64,14 @@ class FileBase:
                 self._fp,
                 sheet_name=None,
                 engine=engine,
+                skipfooter=self._skip_footer,
             )
             dfs = pd.read_excel(
                 self._fp,
                 header=self.header_row,
                 sheet_name=None,
                 engine=engine,
+                skipfooter=self._skip_footer,
             )
         else: # InMemoryUploadedFile
             file_bytes = self._fp.read()
@@ -78,6 +80,7 @@ class FileBase:
                 excel_io,
                 sheet_name=None,
                 engine=engine,
+                skipfooter=self._skip_footer,
             )
             excel_io.seek(0)
             dfs = pd.read_excel(
@@ -85,6 +88,7 @@ class FileBase:
                 header=self.header_row,
                 sheet_name=None,
                 engine=engine,
+                skipfooter=self._skip_footer,
             )
             excel_io.seek(0)  # Reset file pointer after reading
         # regex pattern to determine which dataframe(s) in the list of dataframes
