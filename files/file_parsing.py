@@ -3,7 +3,7 @@ import pandas as pd
 import re
 import io
 from django.core.files.uploadedfile import InMemoryUploadedFile
-
+from typing import (Literal)
 """
 file_parsing.py
 Generic module for extracting and manipulating dataframes from various file types using pandas. 
@@ -58,38 +58,39 @@ class FileBase:
     def data(self, df):
         self._data = df
 
-    def process_xlsx(self, tab_pattern: str):
+    def process_xlsx(self, tab_pattern: str, engine:Literal['openpyxl','xlrd']='openpyxl'):
         if isinstance(self._fp, str):
             self._raw_data = pd.read_excel(
                 self._fp,
-                sheet_name=None
+                sheet_name=None,
+                engine=engine,
+                skipfooter=self._skip_footer,
             )
             dfs = pd.read_excel(
                 self._fp,
                 header=self.header_row,
-                sheet_name=None
+                sheet_name=None,
+                engine=engine,
+                skipfooter=self._skip_footer,
             )
-        elif isinstance(self._fp, InMemoryUploadedFile):
+        else: # InMemoryUploadedFile
+            file_bytes = self._fp.read()
+            excel_io = io.BytesIO(file_bytes)
             self._raw_data = pd.read_excel(
-                io.BytesIO(self._fp.read()),
-                sheet_name=None
+                excel_io,
+                sheet_name=None,
+                engine=engine,
+                skipfooter=self._skip_footer,
             )
+            excel_io.seek(0)
             dfs = pd.read_excel(
-                io.BytesIO(self._fp.read()),
+                excel_io,
                 header=self.header_row,
-                sheet_name=None
+                sheet_name=None,
+                engine=engine,
+                skipfooter=self._skip_footer,
             )
-            self._fp.seek(0)  # Reset file pointer after reading
-        else:
-            self._raw_data = pd.read_excel(
-                io.BytesIO(self._fp).read(),
-                sheet_name=None
-            )
-            dfs = pd.read_excel(
-                io.BytesIO(self._fp).read(),
-                header=self.header_row,
-                sheet_name=None
-            )
+            excel_io.seek(0)  # Reset file pointer after reading
         # regex pattern to determine which dataframe(s) in the list of dataframes
         # should be included in the final data
         # tab name is included in the final dataframe under column 'tab_name'
@@ -116,8 +117,8 @@ class FileBase:
 
     def process_html(self, data_index_number=0):
         if isinstance(self._fp, str):
-            df = pd.read_html(self._fp)[data_index_number]
             self._raw_data = pd.read_html(self._fp)
+            df = self._raw_data[data_index_number]
         elif isinstance(self._fp, InMemoryUploadedFile):
             content = self._fp.read().decode('utf-8')  # Read file content
             self._raw_data = pd.read_html(io.StringIO(content))

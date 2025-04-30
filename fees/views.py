@@ -260,29 +260,6 @@ def client_search_view(request):
     return render(request, template, context=context)
 
 
-def check_unallocated_accounts(account_list: list, producer: Producer):
-    """
-    Checks a list of producer client accounts (account_list) against ProducerClient.client_code
-    and returns a subset of producer client accounts that are not in the database.
-
-    example:
-    If ProducerClient contains accounts: ['100', '101', '102'] under producer "ABC":
-    check_unallocated_accounts(['100', '101', '102', '103'], "ABC") returns ['103']
-    """
-    # get list from db filtered by account list provided
-    _existing_clients = (
-        ProducerClient
-        .objects
-        .filter(
-            producer=producer,
-            client_code__in=account_list
-        )
-        .all()
-        .values_list('client_code', flat=True)
-    )
-    return list(set(account_list) - set(_existing_clients))
-
-
 def execute_commit_journal(journal: Journal):
     assert journal.status == 'closed'
     """
@@ -723,7 +700,7 @@ class FeesDeleteView(DeleteView):
 class JournalDeleteView(FeesDeleteView):
     model = Journal
     success_url_name = 'fees:journals'
-
+    cancel_link_name = 'fees:journals'
 
 @method_decorator(login_required, name="dispatch")
 class SplitDeleteView(FeesDeleteView):
@@ -759,11 +736,9 @@ def journal_upload_view(request, pk):
     context = {'form': form, 'journal': journal}
 
     if form.is_valid():
-        file = request.FILES['file']
-        df = file_manager.clean_file(journal.producer.code, file)
+        uploaded_file = request.FILES['file']
+        df = file_manager.clean_file(journal.producer.code, uploaded_file)
         accounts = df.account_code.unique().tolist()
-
-        context['df'] = df
 
         # get list of accounts missing from DB
         missing_accounts = (
@@ -772,7 +747,6 @@ def journal_upload_view(request, pk):
         )
         missing_accounts = list(missing_accounts.itertuples(index=False))
 
-        """
         # add missing accounts into DB with NULL deal code
         for missing_account in missing_accounts:
             ProducerClient.objects.create(
@@ -783,9 +757,61 @@ def journal_upload_view(request, pk):
                 created_by=request.user,
                 updated_by=request.user
             )
-        """
 
+        # add journal details if there are no missing accounts
+        bkge_classes = {x.code: x.id for x in BkgeClass.objects.all()}
+        df['bkge_class_id'] = df['bkge_code'].map(bkge_classes)
+        df['journal_id'] = pk
+        accounts_to_map = ProducerClient.objects.filter(producer_id=journal.producer.id).all()
+        account_map = {x.client_code:x.id for x in accounts_to_map}
+        df['client_account_code_id'] = df.account_code.map(account_map)
+        df.fillna({'amount':0,'gst':0,'lender_amount':0,'lender_gst':0,'balance':0,'limit':0}, inplace=True)
+        jd_objs = []
+        for _, row in df.iterrows():
+            jd_objs.append(
+                JournalDetail(
+                    journal_id=row['journal_id'],
+                    bkge_class_id=row['bkge_class_id'],
+                    client_account_code_id=row['client_account_code_id'],
+                    product=row['product'],
+                    external_adviser=row['external_adviser'],
+                    amount=row['amount'],
+                    gst=row['gst'],
+                    details=row['name'],
+                    lender_amount=row['lender_amount'],
+                    lender_gst=row['lender_gst'],
+                    balance=row['balance'],
+                    limit=row['limit'],
+                )
+            )
+        JournalDetail.objects.bulk_create(jd_objs, batch_size=500)
+        return redirect('fees:journal-detail', pk=pk)
     return render(request, template, context=context)
+
+
+
+def check_unallocated_accounts(account_list: list, producer: Producer):
+    """
+    Checks a list of producer client accounts (account_list) against ProducerClient.client_code
+    and returns a subset of producer client accounts that are not in the database.
+
+    example:
+    If ProducerClient contains accounts: ['100', '101', '102'] under producer "ABC":
+    check_unallocated_accounts(['100', '101', '102', '103'], "ABC") returns ['103']
+    """
+    # get list from db filtered by account list provided
+    _existing_clients = (
+        ProducerClient
+        .objects
+        .filter(
+            producer=producer,
+            client_code__in=account_list
+        )
+        .all()
+        .values_list('client_code', flat=True)
+    )
+    return list(set(account_list) - set(_existing_clients))
+
 
 
 @login_required
