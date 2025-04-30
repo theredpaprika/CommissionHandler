@@ -18,11 +18,78 @@ The Producer function is also wrapped in a decorator that performs format valida
 
 import pandas as pd
 import numpy as np
+from producer_dispatcher import ProducerCleanerRegistry
 
 if __name__ == '__main__':
     import file_parsing as parsing
 else:
     from . import file_parsing as parsing
+
+REQUIRED_COLUMNS = {
+    'account_code': str,
+    'name': str,
+    'product': str,
+    'external_adviser': str,
+    'bkge_code': str,
+    'amount': float,
+    'gst': float,
+    'lender_amount': float,
+    'lender_gst': float,
+    'limit': float,
+    'balance': float
+}
+
+
+def validate_dataframe(df: pd.DataFrame) -> None:
+    if not isinstance(df, pd.DataFrame):
+        raise ValueError("Function output is not a DataFrame")
+    if df.empty:
+        raise ValueError("DataFrame is empty")
+
+
+def rename_columns(df: pd.DataFrame, column_mapping: dict) -> pd.DataFrame:
+    return df.rename(columns=column_mapping)
+
+
+def add_missing_columns(df: pd.DataFrame, required_columns: dict) -> pd.DataFrame:
+    for col, dtype in required_columns.items():
+        if col not in df.columns:
+            if dtype == float:
+                df[col] = 0.0
+            elif dtype == str:
+                df[col] = ''
+            else:
+                df[col] = np.nan
+    return df
+
+
+def clean_and_cast_columns(df: pd.DataFrame, required_columns: dict) -> pd.DataFrame:
+    for col, dtype in required_columns.items():
+        if col not in df.columns:
+            continue
+
+        if dtype == str:
+            df[col] = df[col].astype(str).str.replace(r'[$,]+', '', regex=True)
+        elif dtype == float:
+            if df[col].dtype == object:
+                df[col] = df[col].str.replace(r'[$,]+', '', regex=True)
+            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0.0)
+    return df
+
+
+# DECORATOR FUNCTION FOR PRODUCER-SPECIFIC FUNCTIONS
+def format_to_standard_schema(column_mapping: dict, required_columns: dict = REQUIRED_COLUMNS):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            df = func(*args, **kwargs)
+            validate_dataframe(df)
+            df = rename_columns(df, column_mapping)
+            df = add_missing_columns(df, required_columns)
+            df = clean_and_cast_columns(df, required_columns)
+            return df[list(required_columns.keys())]
+        return wrapper
+    return decorator
+
 
 # decorator function
 def formatter(new_columns):
@@ -70,6 +137,26 @@ The Producer functions are decorated with the @formatter decorator, which perfor
 The functions output the UploadedFileBase.data dataframe after making transformations to it.
 ***************************************************************************************
 """
+
+
+@ProducerCleanerRegistry.register("SFG")
+@formatter({'Loan ID': 'account_code', 'Client': 'name',
+            'Net Commission (ex GST)': 'amount',
+            'Gross Commission (ex GST)': 'lender_amount',
+            'Gross Commission (GST)': 'lender_gst',
+            'Net Commission GST': 'gst', 'Broker Name': 'external_adviser',
+            'Lender': 'product', 'Settlement Amount': 'loan_limit',
+            'Loan Balance/Amount': 'balance', 'bkge_code': 'bkge_code'})
+def sfg_parser(file):
+    b = parsing.FileBase(file)
+    b.header_row = 0
+    b.process_xlsx(r'(Upfront|Clawback|Trail) Details', engine='openpyxl')
+    bkg = {'Upfront Details': 'MXI', 'Trail Details': 'MXO', 'Clawback Details': 'MXR'}
+    b.data['bkge_code'] = b.data['tab_name'].map(bkg)
+    return b.data
+
+
+
 
 
 @formatter({'Lender Ref No.': 'account_code', 'Client': 'name',
@@ -156,6 +243,8 @@ def _sfg2(file):
     return b.data
 
 
+
+# mark for deletion
 def clean_file(producer, file):
     """
     clean_file function
