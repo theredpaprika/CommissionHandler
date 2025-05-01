@@ -5,26 +5,31 @@ import io
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from typing import (Literal)
 from dataclasses import dataclass, field
-from typing import Union
+from typing import Union, Any
 """
 file_parsing.py
 Generic module for extracting and manipulating dataframes from various file types using pandas. 
 """
 
-"""
+
 @dataclass
 class FileParser:
     _fp: Union[str, InMemoryUploadedFile]
     _data: pd.DataFrame = field(default=None, init=False)
+    _raw_data: Any = field(default=None, init=False)
+    _header_row: int = field(default=None)
+    _skip_footer: int = field(default=None)
+    _skip_rows: int = field(default=None)
 
-    def _read_file_content(self) -> io.BytesIO:
-        if isinstance(self._fp, str):
-            return self._fp
-        else:
-            content = self._fp.read()
-            self._fp.seek(0)
-            return io.BytesIO(content)
-"""
+
+def _read_file_content(self) -> io.BytesIO:
+    if isinstance(self._fp, str):
+        return self._fp
+    else:
+        content = self._fp.read()
+        self._fp.seek(0)
+        return io.BytesIO(content)
+
 
 class FileBase:
 
