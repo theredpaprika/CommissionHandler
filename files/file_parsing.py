@@ -29,7 +29,6 @@ class FileParser:
         sheets = self._read_excel(read_header=True)
         filtered = self._filter_sheets(sheets)
         self.data = pd.concat(filtered.values(), ignore_index=True)
-        self._postprocess()
 
     def process_csv(self):
         stream = self._get_csv_stream()
@@ -94,18 +93,9 @@ class FileParser:
         if self.config.tab_pattern:
             dfs = {k: v for k, v in dfs.items() if re.match(self.config.tab_pattern, k)}
             for name, df in dfs.items():
-                df['tab_name'] = name
+                df['sheet_name'] = name
         return dfs
 
-    def _postprocess(self):
-        if self.data is not None:
-            self.data = (
-                ParsePipeline(self.data)
-                .clean_columns()
-                .add_defaults()
-                .cast_types()
-                .result()
-            )
 
 
 # ------------------------------------------------------------------------------

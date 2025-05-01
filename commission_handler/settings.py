@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'fees.apps.FeesConfig',
     'accounting.apps.AccountingConfig',
     'tenants.apps.TenantsConfig',
+    'files.apps.FilesConfig',
     'django_tables2',
     'charges.apps.ChargesConfig'
 ]

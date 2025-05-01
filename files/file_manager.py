@@ -18,8 +18,8 @@ The Producer function is also wrapped in a decorator that performs format valida
 
 import pandas as pd
 import numpy as np
-from producer_dispatcher import ProducerCleanerRegistry
-from file_parsing import ParsePipeline, FileParserConfig, FileParser
+from .producer_dispatcher import ProducerCleanerRegistry
+from .file_parsing import ParsePipeline, FileParserConfig, FileParser
 
 if __name__ == '__main__':
     import file_parsing as parsing
@@ -155,20 +155,28 @@ The functions output the UploadedFileBase.data dataframe after making transforma
 
 
 @ProducerCleanerRegistry.register("SFG")
-@formatter({'Loan ID': 'account_code', 'Client': 'name',
+def sfg_parser(file):
+    column_mapping = {'Loan ID': 'account_code', 'Client': 'name',
             'Net Commission (ex GST)': 'amount',
             'Gross Commission (ex GST)': 'lender_amount',
             'Gross Commission (GST)': 'lender_gst',
             'Net Commission GST': 'gst', 'Broker Name': 'external_adviser',
             'Lender': 'product', 'Settlement Amount': 'loan_limit',
-            'Loan Balance/Amount': 'balance', 'bkge_code': 'bkge_code'})
-def sfg_parser(file):
-    b = parsing.FileBase(file)
-    b.header_row = 0
-    b.process_xlsx(r'(Upfront|Clawback|Trail) Details', engine='openpyxl')
+            'Loan Balance/Amount': 'balance', 'bkge_code': 'bkge_code'}
+    config = FileParserConfig(header_row=0, tab_pattern=r'(Upfront|Clawback|Trail) Details')
+    parser = parsing.FileParser(file, config)
+    parser.process_xlsx()
     bkg = {'Upfront Details': 'MXI', 'Trail Details': 'MXO', 'Clawback Details': 'MXR'}
-    b.data['bkge_code'] = b.data['tab_name'].map(bkg)
-    return b.data
+    parser.data['bkge_code'] = parser.data['sheet_name'].map(bkg)
+    df = (
+        ParsePipeline(parser.data)
+        .clean_columns()
+        .cast_types()
+        .standardise(column_mapping, REQUIRED_COLUMNS)
+        .result()
+    )
+    print(df)
+    return df
 
 
 

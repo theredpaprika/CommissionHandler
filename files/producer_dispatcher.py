@@ -6,6 +6,7 @@ class ProducerCleanerRegistry:
     @classmethod
     def register(cls, name):
         def decorator(func):
+            print("Registering {}".format(name))
             cls.registry[name] = func
             return func
         return decorator
