@@ -19,11 +19,13 @@ The Producer function is also wrapped in a decorator that performs format valida
 import pandas as pd
 import numpy as np
 from producer_dispatcher import ProducerCleanerRegistry
+from file_parsing import ParsePipeline, FileParserConfig, FileParser
 
 if __name__ == '__main__':
     import file_parsing as parsing
 else:
     from . import file_parsing as parsing
+
 
 REQUIRED_COLUMNS = {
     'account_code': str,
@@ -38,6 +40,19 @@ REQUIRED_COLUMNS = {
     'limit': float,
     'balance': float
 }
+
+"""
+EXAMPLE PIPELINES
+pipeline = (
+    ParsePipeline(df)
+    .clean_columns()
+    .add_defaults()
+    .cast_types()
+    .standardize(column_mapping, REQUIRED_COLUMNS)
+    .result()
+)
+"""
+
 
 
 def validate_dataframe(df: pd.DataFrame) -> None:
