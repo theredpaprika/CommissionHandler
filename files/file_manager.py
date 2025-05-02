@@ -41,18 +41,6 @@ REQUIRED_COLUMNS = {
     'balance': float
 }
 
-"""
-EXAMPLE PIPELINES
-pipeline = (
-    ParsePipeline(df)
-    .clean_columns()
-    .add_defaults()
-    .cast_types()
-    .standardize(column_mapping, REQUIRED_COLUMNS)
-    .result()
-)
-"""
-
 
 
 def validate_dataframe(df: pd.DataFrame) -> None:
@@ -92,56 +80,6 @@ def clean_and_cast_columns(df: pd.DataFrame, required_columns: dict) -> pd.DataF
     return df
 
 
-# DECORATOR FUNCTION FOR PRODUCER-SPECIFIC FUNCTIONS
-def format_to_standard_schema(column_mapping: dict, required_columns: dict = REQUIRED_COLUMNS):
-    def decorator(func):
-        def wrapper(*args, **kwargs):
-            df = func(*args, **kwargs)
-            validate_dataframe(df)
-            df = rename_columns(df, column_mapping)
-            df = add_missing_columns(df, required_columns)
-            df = clean_and_cast_columns(df, required_columns)
-            return df[list(required_columns.keys())]
-        return wrapper
-    return decorator
-
-
-# decorator function
-def formatter(new_columns):
-    def decorator(func):
-        def wrapper(*args, **kwargs):
-            df = func(*args, **kwargs)
-            # Perform validation checks on the DataFrame
-            if not isinstance(df, pd.DataFrame):
-                raise ValueError("Function output is not a DataFrame")
-            if df.empty:
-                raise ValueError("DataFrame is empty")
-            df = df.rename(columns=new_columns)[list(new_columns.values())]
-            if 'limit' not in df.columns:
-                df['limit'] = 0
-            if 'balance' not in df.columns:
-                df['balance'] = 0
-            if 'external_adviser' not in df.columns:
-                df['external_adviser'] = np.nan
-            if 'bkge_code' not in df.columns:
-                df['bkge_code'] = np.nan
-            df['account_code'] = df.account_code.astype(str)
-            df['name'] = df.name.astype(str)
-            df['external_adviser'] = df.external_adviser.astype(str)
-            df['bkge_code'] = df.bkge_code.astype(str)
-            numerics = ['limit', 'balance', 'amount', 'gst']
-            for col in df.columns:
-                if df[col].dtype == 'object':
-                    df[col] = df[col].str.replace('[$,]+', '', regex=True)
-                    if col in numerics:
-                        df[col] = pd.to_numeric(df[col], errors='coerce')
-            return df[['account_code','name','product','external_adviser','bkge_code',
-                       'amount','gst','lender_amount','lender_gst','limit','balance']]
-        return wrapper
-    return decorator
-
-
-
 
 """
 ***************************************************************************************
@@ -179,109 +117,63 @@ def sfg_parser(file):
     return df
 
 
-
-
-
-@formatter({'Lender Ref No.': 'account_code', 'Client': 'name',
-            'Adviser Share (ex GST)': 'amount',
-            'Adviser Share (GST)': 'gst',
-            'Supplier Amount (ex GST)': 'lender_amount',
-            'Supplier Amount (GST)': 'lender_gst',
-            'Product': 'product', 'Original Loan Amount': 'loan_limit',
-            'Base Value': 'balance', 'bkge_code': 'bkge_code', 'Adviser':'external_adviser'})
-def _sfg(file):
-    b = parsing.FileBase(file)
-    b.header_row = 11
-    b.process_xlsx('Sheet1', engine='xlrd')
-    b.data = parsing.drop_cols_by_name(b.data, 'Unnamed')
-    b.data = parsing.column_fill(b.data, 'Lender Ref No.', 'Adviser',
-           "Client.isnull() and `Lender Ref No.` not in ['New Business','On-Going','Sub Total']")
-    b.data = parsing.filter_data(b.data, '~Client.isnull()')
-    b.data = parsing.clean_columns(b.data)
-    if 'Upfront' in b.raw_data['Sheet1'].iloc[8][0]:
-        b.data['bkge_code'] = 'MXI'
-    elif 'Trail' in b.raw_data['Sheet1'].iloc[8][0]:
-        b.data['bkge_code'] = 'MXO'
-    return b.data
-
-@formatter({'Account Number': 'account_code', 'Borrower': 'name',
+@ProducerCleanerRegistry.register("SQ1")
+def _sq1(file):
+    column_mapping = {'Account Number': 'account_code', 'Borrower': 'name',
             'Payment': 'amount',
             'GST': 'gst',
             'Commission': 'lender_amount',
             'Original Broker': 'external_adviser',
             'lender_gst': 'lender_gst',
             'Lender': 'product', 'Loan Amt': 'loan_limit',
-            'Loan Bal': 'balance', 'bkge_code': 'bkge_code'})
-def _sq1(file):
-    b = parsing.FileBase(file)
-    b.header_row = 5
-    b.skip_footer = 1
-    b.process_xlsx('Sheet1', engine='openpyxl')
-    b.data['Account Number'] = b.data['Account Number'].fillna('0')
-    b.data.loc[b.data['Account Number'] == '0', 'Borrower'] = \
-        b.data.loc[b.data['Account Number'] == '0', 'Loan Bal']
-    b.data.loc[b.data['Account Number'] == '0', 'Loan Bal'] = np.nan
-    for col in ['Loan Amt','Loan Bal','Commission','Comm Rate','Payment','GST','Total Payment']:
-        b.data[col] = b.data[col].astype(float)
-    b.data['lender_gst'] = b.data['GST'] / b.data['Comm Rate']
+            'Loan Bal': 'balance', 'bkge_code': 'bkge_code'}
+    config = FileParserConfig(header_row=5, skip_footer=1)
+    parser = parsing.FileParser(file, config)
+    parser.process_xlsx()
+
+    parser.data['Borrower'] = parser.data['Borrower'].fillna(parser.data['Loan Bal'])
+    parser.data['Account Number'] = parser.data['Account Number'].fillna(parser.data['Loan Bal'])
+    parser.data['Loan Bal'] = 0.0
+    parser.data['lender_gst'] = parser.data['GST'] / parser.data['Comm Rate']
     bkg = {'Trails': 'MXO', 'Upfront': 'MXI'}
-    b.data['bkge_code'] = bkg[b.raw_data['Sheet1'].values[3][1]]
-    return b.data
+    parser.data['bkge_code'] = bkg[parser.raw_data['Sheet1'].values[4][1]]
+    df = (
+        ParsePipeline(parser.data)
+        .clean_columns()
+        .cast_types()
+        .standardise(column_mapping, REQUIRED_COLUMNS)
+        .result()
+    )
+    print(df)
+    return df
 
 
-@formatter({'Loan Account Number': 'account_code', 'Client': 'name',
+@ProducerCleanerRegistry.register("FNS")
+def _finsure(file):
+    column_mapping = {'Loan Account Number': 'account_code', 'Client': 'name',
             'Amount Paid': 'amount',
             'GST Paid': 'gst',
             'lender_amount': 'lender_amount',
             'lender_gst': 'lender_gst',
             'Lender': 'product', 'loan_limit': 'loan_limit',
-            'Loan Balance': 'balance', 'bkge_code': 'bkge_code'})
-def _finsure(file):
-    b = parsing.FileBase(file)
-    b.skip_footer = -1
-    b.process_html(0)
-    b.data.loc[b.data['Loan Account Number'].isna(), 'Loan Account Number'] = 0
-    b.data.loc[b.data['Commission Type'] == 'Adjustments*', 'Commission Type'] = 'ADJUST'
-    b.data['loan_limit'] = b.data['Loan Balance']
+            'Loan Balance': 'balance', 'bkge_code': 'bkge_code'}
+    config = FileParserConfig(header_row=0, skip_footer=1)
+    parser = parsing.FileParser(file, config)
+    parser.process_html(data_index_number=0)
+
+    parser.data['Loan Account Number'] = parser.data['Loan Account Number'].fillna('0')
+    parser.data.loc[parser.data['Commission Type']=='Adjustments*', 'Commission Type'] = 'ADJUST'
+    parser.data['loan_limit'] = parser.data['Loan Balance']
     bkg = {'TRAIL': 'MXO', 'ADJUST': 'FNS', 'UPFRONT': 'MXI'}
-    b.data['bkge_code'] = b.data['Commission Type'].map(bkg)
-    b.data['lender_amount'] = None
-    b.data['lender_gst'] = None
-    return b.data
-
-
-@formatter({'Loan ID': 'account_code', 'Client': 'name',
-            'Net Commission (ex GST)': 'amount',
-            'Gross Commission (ex GST)': 'lender_amount',
-            'Gross Commission (GST)': 'lender_gst',
-            'Net Commission GST': 'gst', 'Broker Name': 'external_adviser',
-            'Lender': 'product', 'Settlement Amount': 'loan_limit',
-            'Loan Balance/Amount': 'balance', 'bkge_code': 'bkge_code'})
-def _sfg2(file):
-    b = parsing.FileBase(file)
-    b.header_row = 0
-    b.process_xlsx(r'(Upfront|Clawback|Trail) Details', engine='openpyxl')
-    bkg = {'Upfront Details': 'MXI', 'Trail Details': 'MXO', 'Clawback Details': 'MXR'}
-    b.data['bkge_code'] = b.data['tab_name'].map(bkg)
-    return b.data
-
-
-
-# mark for deletion
-def clean_file(producer, file):
-    """
-    clean_file function
-    Takes the Producer and file as input and returns the dataframe after processing.
-    """
-    _dic = {
-        'SFGEX': _sfg,
-        'SFG': _sfg2,
-        'SQ1': _sq1,
-        'FNS': _finsure
-    }
-    if producer not in _dic.keys():
-        raise ValueError("Producer not supported")
-    output = _dic[producer](file)
-    return output
+    parser.data['bkge_code'] = parser.data['Commission Type'].map(bkg)
+    df = (
+        ParsePipeline(parser.data)
+        .clean_columns()
+        .cast_types()
+        .standardise(column_mapping, REQUIRED_COLUMNS)
+        .result()
+    )
+    print(df)
+    return df
 
 

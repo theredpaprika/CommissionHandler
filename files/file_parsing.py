@@ -16,6 +16,12 @@ class FileParserConfig:
     tab_pattern: Optional[str] = None
     engine: Literal['openpyxl', 'xlrd'] = 'openpyxl'
 
+    def __post_init__(self):
+        self.skip_footer = max(0, self.skip_footer or 0)
+        self.skip_rows = max(0, self.skip_rows or 0)
+        if self.header_row is not None:
+            self.header_row = max(0, self.header_row)
+
 
 class FileParser:
     def __init__(self, file_obj: Union[str, InMemoryUploadedFile], config: FileParserConfig):
@@ -40,7 +46,6 @@ class FileParser:
             skipfooter=self.config.skip_footer or 0,
             engine='python'
         )
-        self._postprocess()
 
     def process_html(self, data_index_number=0):
         content = self._get_html_content()
@@ -52,10 +57,9 @@ class FileParser:
             df = df.iloc[self.config.header_row + 1:]
 
         if self.config.skip_footer:
-            df = df.iloc[:self.config.skip_footer]
+            df = df.iloc[:-self.config.skip_footer]
 
         self.data = df.reset_index(drop=True)
-        self._postprocess()
 
     def _read_excel(self, read_header=True):
         header = self.config.header_row if read_header else None
@@ -152,6 +156,10 @@ class ParsePipeline:
 
     def filter_rows(self, query: str):
         self.df = filter_data(self.df, query)
+        return self
+
+    def replace_column_where(self, condition, source_col: str, target_col: str):
+        self.df.loc[condition, target_col] = self.df.loc[condition, source_col]
         return self
 
     def drop_by_name(self, pattern: str):
