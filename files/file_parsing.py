@@ -176,6 +176,8 @@ class ParsePipeline:
         for col, dtype in required_columns.items():
             if col not in self.df.columns:
                 self.df[col] = pd.Series([None] * len(self.df), dtype=dtype)
+            if dtype == str:
+                self.df[col] = self.df[col].str.replace('\.0', '', regex=True)
 
         self.df = self.df.astype({col: dtype for col, dtype in required_columns.items() if col not in self.df.columns})
         self.df = self.df[list(required_columns.keys())]

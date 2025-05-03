@@ -74,7 +74,7 @@ def check_unallocated_accounts(account_list: list, producer: Producer):
         .all()
         .values_list('client_code', flat=True)
     )
-    accounts = [str(i) for i in account_list]
+    accounts = [str(i).replace('.0','') for i in account_list]
     existing = [str(i) for i in _existing_clients]
     return list(set(accounts) - set(existing))
 
