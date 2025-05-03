@@ -18,13 +18,16 @@ The Producer function is also wrapped in a decorator that performs format valida
 
 import pandas as pd
 import numpy as np
-from .producer_dispatcher import ProducerCleanerRegistry
-from .file_parsing import ParsePipeline, FileParserConfig, FileParser
+
 
 if __name__ == '__main__':
     import file_parsing as parsing
+    from file_parsing import ParsePipeline, FileParserConfig
+    from producer_dispatcher import ProducerCleanerRegistry
 else:
     from . import file_parsing as parsing
+    from .producer_dispatcher import ProducerCleanerRegistry
+    from .file_parsing import ParsePipeline, FileParserConfig
 
 
 REQUIRED_COLUMNS = {
@@ -109,11 +112,10 @@ def sfg_parser(file):
     df = (
         ParsePipeline(parser.data)
         .clean_columns()
-        .cast_types()
         .standardise(column_mapping, REQUIRED_COLUMNS)
+        .clean_accounts()
         .result()
     )
-    print(df)
     return df
 
 
@@ -140,11 +142,10 @@ def _sq1(file):
     df = (
         ParsePipeline(parser.data)
         .clean_columns()
-        .cast_types()
         .standardise(column_mapping, REQUIRED_COLUMNS)
+        .clean_accounts()
         .result()
     )
-    print(df)
     return df
 
 
@@ -169,11 +170,10 @@ def _finsure(file):
     df = (
         ParsePipeline(parser.data)
         .clean_columns()
-        .cast_types()
         .standardise(column_mapping, REQUIRED_COLUMNS)
+        .clean_accounts()
         .result()
     )
-    print(df)
     return df
 
 

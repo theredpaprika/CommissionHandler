@@ -149,11 +149,6 @@ class ParsePipeline:
                 self.df[col] = 0
         return self
 
-    def cast_types(self):
-        if 'account_code' in self.df.columns:
-            self.df['account_code'] = self.df['account_code'].astype(str)
-        return self
-
     def filter_rows(self, query: str):
         self.df = filter_data(self.df, query)
         return self
@@ -176,11 +171,14 @@ class ParsePipeline:
         for col, dtype in required_columns.items():
             if col not in self.df.columns:
                 self.df[col] = pd.Series([None] * len(self.df), dtype=dtype)
-            if dtype == str:
-                self.df[col] = self.df[col].str.replace('\.0', '', regex=True)
 
         self.df = self.df.astype({col: dtype for col, dtype in required_columns.items() if col not in self.df.columns})
         self.df = self.df[list(required_columns.keys())]
+        return self
+
+    def clean_accounts(self):
+        if 'account_code' in self.df.columns:
+            self.df['account_code'] = self.df['account_code'].astype(str).str.replace('\.0','', regex=True)
         return self
 
     def _validate(self):
