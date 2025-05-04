@@ -73,7 +73,6 @@ def clean_and_cast_columns(df: pd.DataFrame, required_columns: dict) -> pd.DataF
     for col, dtype in required_columns.items():
         if col not in df.columns:
             continue
-
         if dtype == str:
             df[col] = df[col].astype(str).str.replace(r'[$,]+', '', regex=True)
         elif dtype == float:
@@ -158,10 +157,9 @@ def _finsure(file):
             'lender_gst': 'lender_gst',
             'Lender': 'product', 'loan_limit': 'loan_limit',
             'Loan Balance': 'balance', 'bkge_code': 'bkge_code'}
-    config = FileParserConfig(header_row=0, skip_footer=1)
+    config = FileParserConfig(skip_footer=1)
     parser = parsing.FileParser(file, config)
     parser.process_html(data_index_number=0)
-
     parser.data['Loan Account Number'] = parser.data['Loan Account Number'].fillna('0')
     parser.data.loc[parser.data['Commission Type']=='Adjustments*', 'Commission Type'] = 'ADJUST'
     parser.data['loan_limit'] = parser.data['Loan Balance']

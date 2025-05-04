@@ -10,7 +10,7 @@ from typing import Union, Any
 
 @dataclass
 class FileParserConfig:
-    header_row: Optional[int] = 0
+    header_row: Optional[int] = None
     skip_footer: Optional[int] = 0
     skip_rows: Optional[int] = 0
     tab_pattern: Optional[str] = None
@@ -130,6 +130,10 @@ def column_fill(data: pd.DataFrame, column: str, new_column=None, query_filter=N
         data[new_column] = data[column].ffill()
     return data
 
+def clean_numeric_strings(data: pd.DataFrame) -> pd.DataFrame:
+    data = data.map(lambda x: re.sub(r"[$,]+", "", x) if isinstance(x, str) else x)
+    return data
+
 
 # ------------------------------------------------------------------------------
 # ParsePipeline class
@@ -144,9 +148,12 @@ class ParsePipeline:
         return self
 
     def add_defaults(self):
-        for col in ['limit', 'balance']:
-            if col not in self.df:
-                self.df[col] = 0
+        if 'balance' not in self.df.columns:
+            self.df['balance'] = 0.0
+        self.df['limit'] = self.df.get(
+            'limit',
+            pd.Series(index=self.df.index, dtype=float)
+        ).fillna(self.df['balance'])
         return self
 
     def filter_rows(self, query: str):
@@ -168,6 +175,7 @@ class ParsePipeline:
     def standardise(self, column_mapping:dict, required_columns:dict):
         self._validate()
         self.df = self.df.rename(columns=column_mapping)
+        self.df = clean_numeric_strings(self.df)
         for col, dtype in required_columns.items():
             if col not in self.df.columns:
                 self.df[col] = pd.Series([None] * len(self.df), dtype=dtype)
@@ -178,7 +186,7 @@ class ParsePipeline:
 
     def clean_accounts(self):
         if 'account_code' in self.df.columns:
-            self.df['account_code'] = self.df['account_code'].astype(str).str.replace('\.0','', regex=True)
+            self.df['account_code'] = self.df['account_code'].astype(str).str.replace('.0','', regex=True)
         return self
 
     def _validate(self):
