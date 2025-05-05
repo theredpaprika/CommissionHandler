@@ -3,181 +3,199 @@ import pandas as pd
 import re
 import io
 from django.core.files.uploadedfile import InMemoryUploadedFile
-from typing import (Literal)
-"""
-file_parsing.py
-Generic module for extracting and manipulating dataframes from various file types using pandas. 
-
-"""
+from typing import (Literal, Optional)
+from dataclasses import dataclass, field
+from typing import Union, Any
 
 
-class FileBase:
+@dataclass
+class FileParserConfig:
+    header_row: Optional[int] = None
+    skip_footer: Optional[int] = 0
+    skip_rows: Optional[int] = 0
+    tab_pattern: Optional[str] = None
+    engine: Literal['openpyxl', 'xlrd'] = 'openpyxl'
 
-    def __init__(self, fp):
-        self._data = None
-        self._raw_data = None
-        self._header_row = None
-        self._skip_footer = None
-        self._skip_rows = None
-        self._fp = fp
+    def __post_init__(self):
+        self.skip_footer = max(0, self.skip_footer or 0)
+        self.skip_rows = max(0, self.skip_rows or 0)
+        if self.header_row is not None:
+            self.header_row = max(0, self.header_row)
 
-    @property
-    def header_row(self):
-        return self._header_row
 
-    @header_row.setter
-    def header_row(self, number):
-        self._header_row = number
+class FileParser:
+    def __init__(self, file_obj: Union[str, InMemoryUploadedFile], config: FileParserConfig):
+        self.file_obj = file_obj
+        self.config = config
+        self.raw_data = None
+        self.data = None
 
-    @property
-    def skip_footer(self):
-        return self._skip_footer
-
-    @skip_footer.setter
-    def skip_footer(self, number):
-        # skip_footer value is used to filter dataframe based on pandas .iloc
-        self._skip_footer = number
-
-    @property
-    def skip_rows(self):
-        return self._skip_rows
-
-    @skip_rows.setter
-    def skip_rows(self, number):
-        self._skip_rows = number
-
-    @property
-    def raw_data(self):
-        return self._raw_data
-
-    @property
-    def data(self):
-        return self._data
-
-    @data.setter
-    def data(self, df):
-        self._data = df
-
-    def process_xlsx(self, tab_pattern: str, engine:Literal['openpyxl','xlrd']='openpyxl'):
-        if isinstance(self._fp, str):
-            self._raw_data = pd.read_excel(
-                self._fp,
-                sheet_name=None,
-                engine=engine,
-                skipfooter=self._skip_footer,
-            )
-            dfs = pd.read_excel(
-                self._fp,
-                header=self.header_row,
-                sheet_name=None,
-                engine=engine,
-                skipfooter=self._skip_footer,
-            )
-        else: # InMemoryUploadedFile
-            file_bytes = self._fp.read()
-            excel_io = io.BytesIO(file_bytes)
-            self._raw_data = pd.read_excel(
-                excel_io,
-                sheet_name=None,
-                engine=engine,
-                skipfooter=self._skip_footer,
-            )
-            excel_io.seek(0)
-            dfs = pd.read_excel(
-                excel_io,
-                header=self.header_row,
-                sheet_name=None,
-                engine=engine,
-                skipfooter=self._skip_footer,
-            )
-            excel_io.seek(0)  # Reset file pointer after reading
-        # regex pattern to determine which dataframe(s) in the list of dataframes
-        # should be included in the final data
-        # tab name is included in the final dataframe under column 'tab_name'
-        if tab_pattern:
-            dfs = {k: v for k, v in dfs.items() if re.match(tab_pattern, k)}
-            for k, df in dfs.items():
-                df['tab_name'] = k
-        self.data = pd.concat([v for v in dfs.values()])
+    def process_xlsx(self):
+        self.raw_data = self._read_excel(read_header=False)
+        sheets = self._read_excel(read_header=True)
+        filtered = self._filter_sheets(sheets)
+        self.data = pd.concat(filtered.values(), ignore_index=True)
 
     def process_csv(self):
-        if isinstance(self._fp, str):
-            self._raw_data = pd.read_csv(self._fp)
-            df = pd.read_csv(self._fp, skiprows=self.skip_rows, skipfooter=self.skip_footer)
-        elif isinstance(self._fp, InMemoryUploadedFile):
-            content = self._fp.read().decode('utf-8')  # Read file content
-            self._raw_data = pd.read_csv(io.StringIO(content))
-            df = pd.read_csv(io.StringIO(content), skiprows=self.skip_rows, skipfooter=self.skip_footer)
-            self._fp.seek(0)  # Reset file pointer after reading
-        else:
-            self._raw_data = pd.read_csv(io.StringIO(self._fp.read().decode('utf-8')))
-            df = pd.read_csv(io.StringIO(self._fp.read().decode('utf-8')),
-                             skiprows=self.skip_rows, skipfooter=self.skip_footer)
-        self.data = df
+        stream = self._get_csv_stream()
+        self.raw_data = pd.read_csv(stream)
+        stream.seek(0)
+        self.data = pd.read_csv(
+            stream,
+            skiprows=self.config.skip_rows or 0,
+            skipfooter=self.config.skip_footer or 0,
+            engine='python'
+        )
 
     def process_html(self, data_index_number=0):
-        if isinstance(self._fp, str):
-            self._raw_data = pd.read_html(self._fp)
-            df = self._raw_data[data_index_number]
-        elif isinstance(self._fp, InMemoryUploadedFile):
-            content = self._fp.read().decode('utf-8')  # Read file content
-            self._raw_data = pd.read_html(io.StringIO(content))
-            df = pd.read_html(io.StringIO(content))[data_index_number]
-            self._fp.seek(0)  # Reset file pointer after reading
-        else:
-            self._raw_data = pd.read_html(io.StringIO(self._fp.read().decode('utf-8')))
-            df = pd.read_html(io.StringIO(self._fp.read().decode('utf-8')))[data_index_number]
-        if self.header_row is not None:
-            df.columns = df.iloc[self.header_row]
-            df = df.iloc[self.header_row+1:]
-        if self.skip_footer is not None:
-            df = df.iloc[:self.skip_footer]
-        self.data = df
+        content = self._get_html_content()
+        self.raw_data = pd.read_html(content)
+        df = self.raw_data[data_index_number]
 
-    def clean_columns(self):
-        assert self.data
-        cols = []
-        for col in self.data.columns:
-            cols.append(col.replace('\n', ' '))
-        self.data.columns = cols
+        if self.config.header_row is not None:
+            df.columns = df.iloc[self.config.header_row]
+            df = df.iloc[self.config.header_row + 1:]
 
-"""
-***************************************************************************************
-Generic Data Processing Functions
-The below functions are used for manipulating the dataframe input (UploadedFileBase.data)
-***************************************************************************************
-"""
+        if self.config.skip_footer:
+            df = df.iloc[:-self.config.skip_footer]
 
+        self.data = df.reset_index(drop=True)
+
+    def _read_excel(self, read_header=True):
+        header = self.config.header_row if read_header else None
+        stream = self._get_excel_stream()
+        return pd.read_excel(
+            stream,
+            header=header,
+            sheet_name=None,
+            engine=self.config.engine,
+            skipfooter=self.config.skip_footer or 0,
+        )
+
+    def _get_excel_stream(self):
+        if isinstance(self.file_obj, str):
+            return self.file_obj
+        content = self.file_obj.read()
+        self.file_obj.seek(0)
+        return io.BytesIO(content)
+
+    def _get_csv_stream(self):
+        if isinstance(self.file_obj, str):
+            return open(self.file_obj, 'r')
+        content = self.file_obj.read().decode('utf-8')
+        self.file_obj.seek(0)
+        return io.StringIO(content)
+
+    def _get_html_content(self):
+        if isinstance(self.file_obj, str):
+            return self.file_obj
+        content = self.file_obj.read().decode('utf-8')
+        self.file_obj.seek(0)
+        return io.StringIO(content)
+
+    def _filter_sheets(self, dfs):
+        if self.config.tab_pattern:
+            dfs = {k: v for k, v in dfs.items() if re.match(self.config.tab_pattern, k)}
+            for name, df in dfs.items():
+                df['sheet_name'] = name
+        return dfs
+
+
+
+# ------------------------------------------------------------------------------
+# Standalone utility functions
+# ------------------------------------------------------------------------------
 
 def clean_columns(data: pd.DataFrame) -> pd.DataFrame:
-    cols = []
-    for col in data.columns:
-        cols.append(col.replace('\n', ' '))
-    data.columns = cols
+    data.columns = [col.replace('\n', ' ') for col in data.columns]
     return data
-
 
 def filter_data(data: pd.DataFrame, query: str) -> pd.DataFrame:
     return data.query(query)
 
-
 def drop_cols(data: pd.DataFrame, col_list) -> pd.DataFrame:
     return data.drop(col_list, axis=1)
-
 
 def drop_cols_by_name(data: pd.DataFrame, pattern) -> pd.DataFrame:
     cols = [col for col in data.columns if re.match(pattern, col)]
     return drop_cols(data, cols)
 
-
-def column_fill(data: pd.DataFrame, column: str , new_column=None, query_filter=None) -> pd.DataFrame:
-    if new_column is None:
-        new_column = column
-    if query_filter is not None:
-        data.loc[data.query(query_filter).index, new_column] = \
-            data.loc[data.query(query_filter).index, column]
+def column_fill(data: pd.DataFrame, column: str, new_column=None, query_filter=None) -> pd.DataFrame:
+    new_column = new_column or column
+    if query_filter:
+        idx = data.query(query_filter).index
+        data.loc[idx, new_column] = data.loc[idx, column]
         data[new_column] = data[new_column].ffill()
     else:
         data[new_column] = data[column].ffill()
     return data
+
+def clean_numeric_strings(data: pd.DataFrame) -> pd.DataFrame:
+    data = data.map(lambda x: re.sub(r"[$,]+", "", x) if isinstance(x, str) else x)
+    return data
+
+
+# ------------------------------------------------------------------------------
+# ParsePipeline class
+# ------------------------------------------------------------------------------
+
+class ParsePipeline:
+    def __init__(self, df: pd.DataFrame):
+        self.df = df
+
+    def clean_columns(self):
+        self.df = clean_columns(self.df)
+        return self
+
+    def add_defaults(self):
+        if 'balance' not in self.df.columns:
+            self.df['balance'] = 0.0
+        self.df['limit'] = self.df.get(
+            'limit',
+            pd.Series(index=self.df.index, dtype=float)
+        ).fillna(self.df['balance'])
+        return self
+
+    def filter_rows(self, query: str):
+        self.df = filter_data(self.df, query)
+        return self
+
+    def replace_column_where(self, condition, source_col: str, target_col: str):
+        self.df.loc[condition, target_col] = self.df.loc[condition, source_col]
+        return self
+
+    def drop_by_name(self, pattern: str):
+        self.df = drop_cols_by_name(self.df, pattern)
+        return self
+
+    def fill_column(self, source: str, target=None, query_filter=None):
+        self.df = column_fill(self.df, column=source, new_column=target, query_filter=query_filter)
+        return self
+
+    def standardise(self, column_mapping:dict, required_columns:dict):
+        self._validate()
+        self.df = self.df.rename(columns=column_mapping)
+        self.df = clean_numeric_strings(self.df)
+        for col, dtype in required_columns.items():
+            if col not in self.df.columns:
+                self.df[col] = pd.Series([None] * len(self.df), dtype=dtype)
+
+        self.df = self.df.astype({col: dtype for col, dtype in required_columns.items() if col not in self.df.columns})
+        self.df = self.df[list(required_columns.keys())]
+        return self
+
+    def clean_accounts(self):
+        if 'account_code' in self.df.columns:
+            self.df['account_code'] = self.df['account_code'].astype(str).str.replace('.0','', regex=True)
+        return self
+
+    def _validate(self):
+        if not isinstance(self.df, pd.DataFrame):
+            raise ValueError("ParsePipeline expects a pandas DataFrame.")
+        if self.df.empty:
+            raise ValueError("Input DataFrame is empty.")
+
+    def result(self):
+        return self.df
+
 

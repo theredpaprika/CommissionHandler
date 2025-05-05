@@ -5,4 +5,6 @@ class FilesConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'files'
 
+    def ready(self):
+        from . import file_manager
 
