@@ -67,7 +67,9 @@ class ProducerTable(Table):
 
 
 class ProducerClientTable(Table):
-    edit = TemplateColumn(template_code="<a href={% url 'fees:client-edit' record.pk %}>Edit</a>", orderable=False)
+    edit = TemplateColumn(
+        template_code='<a href="{% url \'fees:client-edit\' record.pk %}?next={{ request.path|urlencode }}">Edit</a>',
+        orderable=False)
     class Meta:
         model = ProducerClient
         fields = ('client_code','producer', 'name', 'deal')

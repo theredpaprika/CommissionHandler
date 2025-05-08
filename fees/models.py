@@ -110,6 +110,15 @@ class Journal(models.Model):
     def get_absolute_url(self):
         return reverse('fees:journal-detail', args=[str(self.id)])
 
+    def get_accounts_with_null_deal(self):
+        """
+        Returns the related ProducerClient accounts in this journal where the associated Deal is null.
+        """
+        return ProducerClient.objects.filter(
+            id__in=self.details.values_list('client_account_code__id', flat=True),  # Join through details to ProducerClient
+            deal__isnull=True  # Only where Deal is null
+        ).distinct()
+
 
 class JournalDetail(models.Model):
     journal = models.ForeignKey(Journal, on_delete=models.CASCADE, related_name='details')
@@ -129,6 +138,7 @@ class JournalDetail(models.Model):
 
     def splits(self):
         return self.client_account_code.deal.splits.all()
+
 
 
 class Entry(models.Model):

@@ -4,6 +4,7 @@ import datetime as dt
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
+from django.utils.http import url_has_allowed_host_and_scheme
 
 from django.views.generic import ListView, DetailView, UpdateView, DeleteView, CreateView, TemplateView
 from django_tables2 import SingleTableView, MultiTableMixin, SingleTableMixin
@@ -437,23 +438,26 @@ class DealDetailView(SingleTableMixin, DetailView):
 
 
 @method_decorator(login_required, name="dispatch")
-class JournalDetailView(SingleTableMixin, DetailView):
+class JournalDetailView(DetailView):
     model = Journal
     context_object_name = 'journal'
-    context_table_name = 'table'
+    #context_table_name = 'table'
     template_name = 'fees/journal_detail.html'
-    table_class = JDTable
+    #table_class = JDTable
+    table_pagination = {"per_page": 20}
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['table_heading'] = 'Journal Details'
         context['title'] = f'Journal {self.object}'
         context['create_link'] = reverse('fees:jd-create', kwargs={'journal_id':self.object.id}  )
-        context['upload_link'] = reverse('fees:journal-upload', kwargs={'pk':self.object.id}  )
+        context['upload_link'] = reverse('fees:journal-upload', kwargs={'pk':self.object.id})
+        context['unallocated_accounts_table'] = ProducerClientTable(self.get_unallocated_accounts_data())
+        context['jd_table'] = JDTable(self.object.details.all())
         return context
 
-    def get_table_data(self):
-        return self.object.details.all()
+    def get_unallocated_accounts_data(self):
+        return self.object.get_accounts_with_null_deal()
 
 
 # UPDATE VIEWS **************************************************************************************
@@ -477,6 +481,18 @@ class ProducerClientUpdateView(FeesUpdateView):
     success_url_name = 'fees:clients'
     extra_context = {'title': 'Edit Producer Client'}
 
+    def get_success_url(self):
+        next_url = self.request.GET.get('next')
+        print("Raw next URL:", next_url)  # Debugging line
+
+        # Force the next URL to be a relative URL only
+        if next_url and next_url.startswith('/'):
+            print("Redirecting to:", next_url)
+            return next_url
+
+        # Default to producer client list if no 'next' parameter or if invalid
+        print("Redirecting to default list view.")
+        return reverse(self.success_url_name)
 
 # edit agent
 @method_decorator(login_required, name="dispatch")
