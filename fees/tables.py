@@ -35,9 +35,10 @@ class JournalTable(Table):
     id = Column(linkify=True)
     edit = TemplateColumn(template_code="<a href={% url 'fees:journal-edit' record.pk %}>Edit</a>", orderable=False)
     delete = TemplateColumn(template_code="<a class=journal-delete href={% url 'fees:journal-delete' record.pk %}>Delete</a>", orderable=False)
+    commit = TemplateColumn(template_code="<a class=journal-commit href={% url 'fees:journal-commit' record.pk %}>Commit</a>", orderable=False)
     class Meta:
         model = Journal
-        fields = ('id', 'period_end_date', 'description', 'reference', 'cash_amount', 'producer', 'cash_account')
+        fields = ('id', 'period_end_date', 'description', 'reference', 'cash_amount', 'producer', 'cash_account', 'status')
         orderable = True
 
 
@@ -46,7 +47,7 @@ class JDTable(Table):
     delete = TemplateColumn(template_code="<a class=jd-delete href={% url 'fees:jd-delete' record.pk %}>Delete</a>", orderable=False)
     class Meta:
         model = JournalDetail
-        fields = ('id', 'amount', 'gst', 'details', 'lender_amount', 'lender_gst', 'balance', 'limit', 'bkge_class', 'client_account_code')
+        fields = ('id', 'amount', 'gst', 'details', 'lender_amount', 'lender_gst', 'balance', 'limit', 'bkge_class', 'client_account')
         orderable = True
 
 

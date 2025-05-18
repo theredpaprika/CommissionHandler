@@ -26,7 +26,7 @@ def create_journal_details(df, journal_id, producer_id):
 
     df['bkge_class_id'] = df['bkge_code'].map(bkge_map)
     df['journal_id'] = journal_id
-    df['client_account_code_id'] = df.account_code.map(account_map)
+    df['client_account_id'] = df.account_code.map(account_map)
     df.fillna({
         'amount': 0, 'gst': 0, 'lender_amount': 0,
         'lender_gst': 0, 'balance': 0, 'limit': 0
@@ -36,7 +36,7 @@ def create_journal_details(df, journal_id, producer_id):
         JournalDetail(
             journal_id=row['journal_id'],
             bkge_class_id=row['bkge_class_id'],
-            client_account_code_id=row['client_account_code_id'],
+            client_account_id=row['client_account_id'],
             product=row['product'],
             external_adviser=row['external_adviser'],
             amount=row['amount'],
@@ -48,7 +48,7 @@ def create_journal_details(df, journal_id, producer_id):
             limit=row['limit'],
         )
         for _, row in df.iterrows()
-        if not any(pd.isna(row[f]) for f in ['journal_id', 'bkge_class_id', 'client_account_code_id'])
+        if not any(pd.isna(row[f]) for f in ['journal_id', 'bkge_class_id', 'client_account_id'])
     ]
 
     JournalDetail.objects.bulk_create(jd_objs, batch_size=500)
