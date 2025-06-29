@@ -17,7 +17,7 @@ from .forms import (AgentForm, JournalForm, DealForm, DealSplitForm, JournalDeta
 from .tables import (AgentTable, DealTable, DealSplitTable, JournalTable,
                      ProducerClientTable, JDTable, BkgeClassTable, ProducerTable)
 from accounting.models import CommissionPeriod
-from .filters import ProducerClientFilter
+from .filters import ProducerClientFilter, JournalFilter
 
 from files.producer_dispatcher import ProducerCleanerRegistry
 from .services.journal_upload import add_missing_accounts, create_journal_details
@@ -302,13 +302,20 @@ class DealListView(FeesListView):
     }
 
 @method_decorator(login_required, name="dispatch")
-class JournalListView(FeesListView):
-    model = Journal
-    table_class = JournalTable
+class JournalListView(TemplateView):
+    template_name = 'single_table_template.html'
+    context_object_name = 'object'
     context_data = {
         'create_link': reverse_lazy('fees:journal-create'),
-        'title': 'Journals'
+        'title': 'Open Journals'
     }
+
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context['table'] = JournalTable(Journal.objects.filter(status='OPEN').all())
+        context.update(self.context_data)
+        return context
+
 
 @method_decorator(login_required, name="dispatch")
 class BkgeClassListView(FeesListView):
@@ -318,6 +325,7 @@ class BkgeClassListView(FeesListView):
         'create_link': reverse_lazy('fees:bkgeclass-create'),
         'title': 'Brokerage Classes'
     }
+
 
 @method_decorator(login_required, name="dispatch")
 class ProducerListView(FeesListView):
