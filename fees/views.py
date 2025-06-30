@@ -302,7 +302,9 @@ class DealListView(FeesListView):
     }
 
 @method_decorator(login_required, name="dispatch")
-class JournalListView(TemplateView):
+class JournalListView(FeesListView):
+    model = Journal
+    table_class = JournalTable
     template_name = 'single_table_template.html'
     context_object_name = 'object'
     context_data = {
@@ -310,11 +312,8 @@ class JournalListView(TemplateView):
         'title': 'Open Journals'
     }
 
-    def get_context_data(self, **kwargs) -> dict[str, Any]:
-        context = super().get_context_data(**kwargs)
-        context['table'] = JournalTable(Journal.objects.filter(status='OPEN').all())
-        context.update(self.context_data)
-        return context
+    def get_queryset(self):
+        return Journal.objects.filter(status='OPEN')
 
 
 @method_decorator(login_required, name="dispatch")
@@ -689,18 +688,19 @@ def journal_upload_view(request, pk):
 @login_required
 def journal_commit_view(request, pk):
     journal = Journal.objects.get(id=pk)
-    if journal and journal.status == 'OPEN':
-        try:
-            with transaction.atomic():
-                journal.commission_period = CommissionPeriod.get_current_period()
-                fee_generator = FeeGenerator()
-                fee_generator.get_journal_details(journal)
-                fee_generator.generate_fees()
-                Fee.objects.bulk_create(fee_generator.fees)
-                journal.status = 'CLOSED'
-                journal.save()
-        except Exception as e:
-            print(e)
+    unallocated_accounts = journal.get_accounts_with_null_deal()
+    if not journal or not journal.status == 'OPEN':
+        return redirect('fees:journals')
+    if unallocated_accounts:
+        return redirect('fees:journals')
+    with transaction.atomic():
+        journal.commission_period = CommissionPeriod.get_current_period()
+        fee_generator = FeeGenerator()
+        fee_generator.get_journal_details(journal)
+        fee_generator.generate_fees()
+        Fee.objects.bulk_create(fee_generator.fees)
+        journal.status = 'CLOSED'
+        journal.save()
     return redirect('fees:journals')
 
 
