@@ -1,3 +1,4 @@
+from dateutil.relativedelta import relativedelta
 from django.db.models import Sum
 from django.utils.text import slugify
 from django.utils.timezone import now
@@ -12,7 +13,18 @@ class CommissionPeriod(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     @classmethod
-    def get_current_period(cls):
+    def get_existing_period(cls):
+        return cls.objects.filter(processed=False).first()
+
+    @classmethod
+    def get_next_period(cls, previous_date):
+        new_month = previous_date + relativedelta(day=+1)
+        last_day = calendar.monthrange(new_month.year, new_month.month)[1]
+        end_new_month = new_month.replace(day=last_day)
+        return cls.objects.get_or_create(end_date=end_new_month)
+
+    @classmethod
+    def get_create_current_period(cls):
         """Returns the existing commission period for this month or creates a new one."""
         today = now().date()
         last_day = cls.get_last_day_of_month(today)
@@ -22,7 +34,7 @@ class CommissionPeriod(models.Model):
     @classmethod
     def close_and_create_new_period(cls):
         """Closes the current period and creates a new one for the next month."""
-        current_period = cls.get_current_period()
+        current_period = cls.get_create_current_period()
         if not current_period.processed:
             current_period.processed = True
             current_period.save()

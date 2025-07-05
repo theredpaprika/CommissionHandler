@@ -687,6 +687,7 @@ def journal_upload_view(request, pk):
 
 @login_required
 def journal_commit_view(request, pk):
+    print('committing',pk)
     journal = Journal.objects.get(id=pk)
     unallocated_accounts = journal.get_accounts_with_null_deal()
     if not journal or not journal.status == 'OPEN':

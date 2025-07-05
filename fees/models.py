@@ -116,7 +116,7 @@ class Journal(models.Model):
         Returns the related ProducerClient accounts in this journal where the associated Deal is null.
         """
         return ProducerClient.objects.filter(
-            id__in=self.details.values_list('client_account__id', flat=True),  # Join through details to ProducerClient
+            id__in=self.details.values_list('client_account_id', flat=True),  # Join through details to ProducerClient
             deal__isnull=True  # Only where Deal is null
         ).distinct()
 
