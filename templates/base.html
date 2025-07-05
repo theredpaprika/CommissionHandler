@@ -10,6 +10,8 @@
     {% include "header.html" %}
     {% if request.user.is_authenticated %}
         <div class="commission-period-header">Commission period: {{ commission_period }}</div>
+        {% if is_next_month %}<div class="warning-text">The commission period is now in arrears.
+            Please commit any outstanding journals and close off the month.</div>{% endif %}
     {% endif %}
     {%  block content %}
     {% endblock %}

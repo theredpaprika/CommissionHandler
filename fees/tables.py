@@ -1,6 +1,6 @@
 
 from django_tables2 import Table, Column, TemplateColumn
-
+from django.utils.html import format_html
 from .models import Agent, Deal, DealSplit, Journal, JournalDetail, BkgeClass, Producer, ProducerClient
 
 class AgentTable(Table):
@@ -33,12 +33,26 @@ class DealSplitTable(Table):
 
 class JournalTable(Table):
     id = Column(linkify=True)
+    journal_amount = Column(orderable=False, accessor='total_credits')
+    check_result = Column(orderable=False, empty_values=())
     edit = TemplateColumn(template_code="<a href={% url 'fees:journal-edit' record.pk %}>Edit</a>", orderable=False)
     delete = TemplateColumn(template_code="<a class=journal-delete href={% url 'fees:journal-delete' record.pk %}>Delete</a>", orderable=False)
+    commit = TemplateColumn(template_code="<a class=journal-commit href={% url 'fees:journal-commit' record.pk %}>Commit</a>", orderable=False)
+
     class Meta:
         model = Journal
-        fields = ('id', 'period_end_date', 'description', 'reference', 'cash_amount', 'producer', 'cash_account')
+        sequence = ('id', 'period_end_date', 'description', 'reference', 'cash_amount', 'journal_amount', 'check_result', 'producer', 'cash_account', 'status',)
+        exclude = ('commission_period',)
         orderable = True
+
+    def render_check_result(self, record):
+        # Render a tick or cross if cash amount matches journal credits
+        credit = record.total_credits()
+        if record.cash_amount == record.total_credits():
+            return format_html('<span style="color:green;">&#10003;</span>')  # ✓
+        else:
+            return format_html('<span style="color:red;">&#10007;</span>')    # ✗
+
 
 
 class JDTable(Table):
@@ -46,7 +60,7 @@ class JDTable(Table):
     delete = TemplateColumn(template_code="<a class=jd-delete href={% url 'fees:jd-delete' record.pk %}>Delete</a>", orderable=False)
     class Meta:
         model = JournalDetail
-        fields = ('id', 'amount', 'gst', 'details', 'lender_amount', 'lender_gst', 'balance', 'limit', 'bkge_class', 'client_account_code')
+        fields = ('id', 'amount', 'gst', 'details', 'lender_amount', 'lender_gst', 'balance', 'limit', 'bkge_class', 'client_account')
         orderable = True
 
 
@@ -67,7 +81,9 @@ class ProducerTable(Table):
 
 
 class ProducerClientTable(Table):
-    edit = TemplateColumn(template_code="<a href={% url 'fees:client-edit' record.pk %}>Edit</a>", orderable=False)
+    edit = TemplateColumn(
+        template_code='<a href="{% url \'fees:client-edit\' record.pk %}?next={{ request.path|urlencode }}">Edit</a>',
+        orderable=False)
     class Meta:
         model = ProducerClient
         fields = ('client_code','producer', 'name', 'deal')

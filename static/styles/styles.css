@@ -142,3 +142,9 @@ input, select {
     border-radius: 6px;
     background-color: var(--second-accent-colour);
 }
+
+.warning-text {
+    color: var(--accent-colour);
+    border-radius: 6px;
+    font-weight: bold;
+}

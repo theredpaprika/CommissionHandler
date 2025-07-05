@@ -4,21 +4,24 @@ import datetime as dt
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.db import transaction
 
 from django.views.generic import ListView, DetailView, UpdateView, DeleteView, CreateView, TemplateView
 from django_tables2 import SingleTableView, MultiTableMixin, SingleTableMixin
 from django.urls import reverse_lazy, reverse
 
-from .models import Agent, Journal, Deal, DealSplit, ProducerClient, JournalDetail, Producer, Entry, BkgeClass
+from .models import Fee, Agent, Journal, Deal, DealSplit, ProducerClient, JournalDetail, Producer, Fee, BkgeClass
 from .forms import (AgentForm, JournalForm, DealForm, DealSplitForm, JournalDetailForm, BkgeClassForm,
                     ProducerClientForm, DeleteConfirmForm, UploadFileForm, JournalCommitConfirmForm, ProducerForm)
 from .tables import (AgentTable, DealTable, DealSplitTable, JournalTable,
                      ProducerClientTable, JDTable, BkgeClassTable, ProducerTable)
 from accounting.models import CommissionPeriod
-from .filters import ProducerClientFilter
+from .filters import ProducerClientFilter, JournalFilter
 
 from files.producer_dispatcher import ProducerCleanerRegistry
 from .services.journal_upload import add_missing_accounts, create_journal_details
+from .services.journal_commit import FeeGenerator
 
 from django.contrib import messages
 
@@ -117,23 +120,6 @@ def journal_view(request, journal_id):
     return render(request, template, context=context)
 
 
-
-#TODO
-# create a commit journal form with validation in the clean method
-# must ensure all accounts have been assigned to a deal, and if not, redirect
-@login_required
-def journal_commit_view(request, journal_id):
-    template = 'fees/journal_commit.html'
-    journal = Journal.objects.get(id=journal_id)
-    form = JournalCommitConfirmForm(request.POST or None, instance=journal)
-    context = {'form': form}
-    if form.is_valid():
-        journal.status = 'closed'
-        execute_commit_journal(journal)
-        journal.save()
-        return redirect('fees:mjournals')
-
-    return render(request, template, context=context)
 
 
 @login_required
@@ -261,57 +247,6 @@ def client_search_view(request):
     return render(request, template, context=context)
 
 
-def execute_commit_journal(journal: Journal):
-    assert journal.status == 'closed'
-    """
-    logic for calculating revenue splits on details associated with a committed journal
-    :param journal: 
-    :return: 
-    """
-    fees = []
-    for detail in journal.details.all():
-        fees = fees + entries_from_journal_detail(detail)
-    for fee in fees:
-        fee.save()
-
-
-#TODO
-# handling percentage sums over 100%
-def entries_from_journal_detail(detail: JournalDetail):
-
-    entries = []
-    percentage_sum = 0
-    splits = detail.splits()
-
-    for split in splits:
-        gst_exempt = split.agent.is_gst_exempt
-        producer_filter = split.producer_filter
-        if split.bkge_class_filter and split.bkge_class_filter != detail.bkge_class:
-            continue
-        if split.producer_filter and split.producer_filter != detail.journal.producer:
-            continue
-        percentage_sum += split.percentage
-        entries.append(
-            Entry(
-                journal_detail=detail,
-                agent=split.agent,
-                amount=detail.amount * split.percentage / 100,
-                gst=detail.gst * split.percentage / 100
-            )
-        )
-
-    if percentage_sum < 100:
-        entries.append(
-            Entry(
-                journal_detail=detail,
-                agent=detail.client_account_code.deal.agent,
-                amount=detail.amount * (100 - percentage_sum) / 100,
-                gst=detail.gst * (100 - percentage_sum) / 100
-            )
-        )
-
-    return entries
-
 
 #*****************************************************************************
 # CLASS BASED VIEWS
@@ -370,10 +305,16 @@ class DealListView(FeesListView):
 class JournalListView(FeesListView):
     model = Journal
     table_class = JournalTable
+    template_name = 'single_table_template.html'
+    context_object_name = 'object'
     context_data = {
         'create_link': reverse_lazy('fees:journal-create'),
-        'title': 'Journals'
+        'title': 'Open Journals'
     }
+
+    def get_queryset(self):
+        return Journal.objects.filter(status='OPEN')
+
 
 @method_decorator(login_required, name="dispatch")
 class BkgeClassListView(FeesListView):
@@ -383,6 +324,7 @@ class BkgeClassListView(FeesListView):
         'create_link': reverse_lazy('fees:bkgeclass-create'),
         'title': 'Brokerage Classes'
     }
+
 
 @method_decorator(login_required, name="dispatch")
 class ProducerListView(FeesListView):
@@ -437,23 +379,26 @@ class DealDetailView(SingleTableMixin, DetailView):
 
 
 @method_decorator(login_required, name="dispatch")
-class JournalDetailView(SingleTableMixin, DetailView):
+class JournalDetailView(DetailView):
     model = Journal
     context_object_name = 'journal'
-    context_table_name = 'table'
+    #context_table_name = 'table'
     template_name = 'fees/journal_detail.html'
-    table_class = JDTable
+    #table_class = JDTable
+    table_pagination = {"per_page": 20}
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['table_heading'] = 'Journal Details'
         context['title'] = f'Journal {self.object}'
         context['create_link'] = reverse('fees:jd-create', kwargs={'journal_id':self.object.id}  )
-        context['upload_link'] = reverse('fees:journal-upload', kwargs={'pk':self.object.id}  )
+        context['upload_link'] = reverse('fees:journal-upload', kwargs={'pk':self.object.id})
+        context['unallocated_accounts_table'] = ProducerClientTable(self.get_unallocated_accounts_data())
+        context['jd_table'] = JDTable(self.object.details.all())
         return context
 
-    def get_table_data(self):
-        return self.object.details.all()
+    def get_unallocated_accounts_data(self):
+        return self.object.get_accounts_with_null_deal()
 
 
 # UPDATE VIEWS **************************************************************************************
@@ -477,6 +422,18 @@ class ProducerClientUpdateView(FeesUpdateView):
     success_url_name = 'fees:clients'
     extra_context = {'title': 'Edit Producer Client'}
 
+    def get_success_url(self):
+        next_url = self.request.GET.get('next')
+        print("Raw next URL:", next_url)  # Debugging line
+
+        # Force the next URL to be a relative URL only
+        if next_url and next_url.startswith('/'):
+            print("Redirecting to:", next_url)
+            return next_url
+
+        # Default to producer client list if no 'next' parameter or if invalid
+        print("Redirecting to default list view.")
+        return reverse(self.success_url_name)
 
 # edit agent
 @method_decorator(login_required, name="dispatch")
@@ -542,22 +499,6 @@ class ProducerUpdateView(FeesUpdateView):
     success_url_name = 'fees:producers'
     extra_context = {'title': 'Edit Producer'}
 
-
-#TODO
-# create a commit journal form with validation in the clean method
-# must ensure all accounts have been assigned to a deal, and if not, redirect
-@login_required
-def minerva_journal_commit_view(request, pk):
-    template = 'fees/journal_commit.html'
-    journal = Journal.objects.get(id=pk)
-    form = JournalCommitConfirmForm(request.POST or None, instance=journal)
-    context = {'form': form}
-    if form.is_valid():
-        journal.status = 'closed'
-        execute_commit_journal(journal)
-        journal.save()
-        return redirect('fees:journals')
-    return render(request, template, context=context)
 
 
 # CREATE VIEWS **************************************************************************************
@@ -745,9 +686,23 @@ def journal_upload_view(request, pk):
 
 
 @login_required
-def journal_commit(request, pk):
+def journal_commit_view(request, pk):
+    print('committing',pk)
     journal = Journal.objects.get(id=pk)
-    if journal and journal.status == 'OPEN':
+    unallocated_accounts = journal.get_accounts_with_null_deal()
+    if not journal or not journal.status == 'OPEN':
+        return redirect('fees:journals')
+    if unallocated_accounts:
+        return redirect('fees:journals')
+    with transaction.atomic():
         journal.commission_period = CommissionPeriod.get_current_period()
+        fee_generator = FeeGenerator()
+        fee_generator.get_journal_details(journal)
+        fee_generator.generate_fees()
+        Fee.objects.bulk_create(fee_generator.fees)
         journal.status = 'CLOSED'
+        journal.save()
+    return redirect('fees:journals')
+
+
 

@@ -5,6 +5,7 @@ from django.db.models import Sum
 from django.urls import reverse
 
 
+
 User = get_user_model()
 
 # Create your models here.
@@ -110,10 +111,19 @@ class Journal(models.Model):
     def get_absolute_url(self):
         return reverse('fees:journal-detail', args=[str(self.id)])
 
+    def get_accounts_with_null_deal(self):
+        """
+        Returns the related ProducerClient accounts in this journal where the associated Deal is null.
+        """
+        return ProducerClient.objects.filter(
+            id__in=self.details.values_list('client_account_id', flat=True),  # Join through details to ProducerClient
+            deal__isnull=True  # Only where Deal is null
+        ).distinct()
+
 
 class JournalDetail(models.Model):
     journal = models.ForeignKey(Journal, on_delete=models.CASCADE, related_name='details')
-    client_account_code = models.ForeignKey(ProducerClient, on_delete=models.CASCADE, related_name='journal_details')
+    client_account = models.ForeignKey(ProducerClient, on_delete=models.CASCADE, related_name='journal_details')
     related_charge = models.ForeignKey('charges.Charge', on_delete=models.SET_NULL, related_name='related_journal_details', null=True, blank=True)
     bkge_class = models.ForeignKey('fees.BkgeClass', on_delete=models.CASCADE)
     product = models.CharField(max_length=100, null=True, blank=True)
@@ -125,15 +135,16 @@ class JournalDetail(models.Model):
     lender_gst = models.FloatField()
     balance = models.FloatField()
     limit = models.FloatField()
-    pass
 
     def splits(self):
-        return self.client_account_code.deal.splits.all()
+        return self.client_account.deal.splits.all()
 
 
-class Entry(models.Model):
-    journal_detail = models.ForeignKey(JournalDetail, on_delete=models.CASCADE)
-    agent = models.ForeignKey(Agent, on_delete=models.CASCADE)
+class Fee(models.Model):
+    agent = models.ForeignKey(Agent, on_delete=models.CASCADE, related_name='fees')
+    detail = models.ForeignKey(JournalDetail, on_delete=models.CASCADE)
     amount = models.FloatField()
     gst = models.FloatField()
 
+    def __str__(self):
+        return f"Fee: {self.amount} of {self.detail.amount} for {self.agent}"

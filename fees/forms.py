@@ -27,6 +27,12 @@ class JournalForm(FeesForm):
         fields = ['period_end_date','description','reference','cash_amount','cash_account', 'producer']
         widgets = {'class': 'form-control'}
 
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        instance.status = 'OPEN'
+        instance.save()
+        return instance
+
 
 class JournalDetailForm(FeesForm):
     class Meta:
@@ -40,7 +46,7 @@ class JournalDetailForm(FeesForm):
         self.journal = kwargs.pop('journal', None)
         producer = kwargs.pop('producer_context', None)
         super().__init__(*args, **kwargs)
-        self.fields['client_account_code'].queryset = ProducerClient.objects.filter(producer=producer).all()
+        self.fields['client_account'].queryset = ProducerClient.objects.filter(producer=producer).all()
 
     def save(self, commit=True):
         instance = super().save(commit=False)
@@ -94,6 +100,7 @@ class UploadFileForm(forms.Form):
     file = forms.FileField()
 
 
+# TODO
 class JournalCommitConfirmForm(forms.ModelForm):
     confirm = forms.BooleanField(required=True)
 
@@ -108,7 +115,7 @@ class JournalCommitConfirmForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         journal = self.instance
-        _accounts_missing_deals = journal.details.filter(client_account_code__deal__isnull=True)
+        _accounts_missing_deals = journal.details.filter(client_account__deal__isnull=True)
         if len(_accounts_missing_deals) > 0:
             raise forms.ValidationError('Some client account codes are missing deals.')
         if (journal.cash_amount - journal.total_credits() != 0):
