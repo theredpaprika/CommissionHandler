@@ -3,6 +3,16 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from .models import Account, Journal, Entry, AccountSubtype
 from .forms import AccountForm, JournalForm, JournalEntryInlineFormSet, AccountSubtypeForm, CashEntryInlineFormSet
+from .services.new_commission_period import new_commission_period
+
+
+
+#TODO: CONSIDER DELETING THE BELOW
+
+@login_required
+def new_commission_period_view(request):
+    new_commission_period()
+    return redirect('home')
 
 
 @login_required

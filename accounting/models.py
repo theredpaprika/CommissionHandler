@@ -34,7 +34,7 @@ class CommissionPeriod(models.Model):
     @classmethod
     def close_and_create_new_period(cls):
         """Closes the current period and creates a new one for the next month."""
-        current_period = cls.get_create_current_period()
+        current_period = cls.get_existing_period()
         if not current_period.processed:
             current_period.processed = True
             current_period.save()
@@ -90,7 +90,7 @@ class Journal(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __init__(self, *args, **kwargs):
-        super().__init__(args, kwargs)
+        super().__init__(*args, **kwargs)
         self.producer = None
 
     def __str__(self):

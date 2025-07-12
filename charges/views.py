@@ -86,6 +86,7 @@ class ChargeScheduleListView(ChargeBaseListView):
 class ChargesListView(ChargeBaseListView):
     model = Charge
     table_class = ChargeTable
+    queryset = Charge.objects.filter(status="OPEN")
     context_data = {
         'title': 'Open Charges'
     }

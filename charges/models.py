@@ -38,7 +38,7 @@ class ChargeSchedule(models.Model):
 
 class Charge(models.Model):
     commission_period = models.ForeignKey(CommissionPeriod, on_delete=models.CASCADE, related_name='charges', null=True, blank=True, default=None)
-    original_charge = models.ForeignKey('self', on_delete=models.CASCADE)
+    original_charge = models.ForeignKey('self', on_delete=models.CASCADE, null=True, default=None)
     schedule = models.ForeignKey(ChargeSchedule, on_delete=models.CASCADE, related_name='charges')
     paying_agent = models.ForeignKey(Agent, on_delete=models.CASCADE, related_name='paying_charges')
     receiving_agent = models.ForeignKey(Agent, on_delete=models.CASCADE, related_name='receiving_charges')
@@ -51,4 +51,5 @@ class Charge(models.Model):
     def __str__(self):
         return f"{self.schedule}: outstanding={self.outstanding_amount}, status={self.status}"
 
-
+    def is_renewable(self):
+        return self.status == 'OPEN' and self.schedule.roll_balance

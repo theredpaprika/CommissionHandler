@@ -1,6 +1,7 @@
+import datetime as dt
 from accounting.models import CommissionPeriod
+from charges.charge_operations import set_new_commission_period_charges
 
 def new_commission_period():
-    current_period = CommissionPeriod.objects.filter(processed=False).first()
-    current_period.processed = True
-    CommissionPeriod.get_next_period(current_period.end_date)
+    new_period = CommissionPeriod.close_and_create_new_period()
+    set_new_commission_period_charges(new_period)

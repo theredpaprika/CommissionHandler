@@ -8,10 +8,7 @@ This module is designed for:
 -parsing files uploaded by the user (ultimately from an external producer)
 -converting them for submission to the database (as JournalDetail objects)
 
-File paths should be passed (along with the Producer) into the clean_file function.
-The dictionary in the process function maps the Producer to the Producer-specific formatting function.
-each Producer function uses a parsing.FileBase class instance with methods for cleaning the raw data.
-The Producer function is also wrapped in a decorator that performs format validation and column renaming.
+The Producer function is also wrapped in a decorator that performs producer-specific format validation and column renaming.
 
 ***************************************************************************************
 """
@@ -86,10 +83,6 @@ def clean_and_cast_columns(df: pd.DataFrame, required_columns: dict) -> pd.DataF
 """
 ***************************************************************************************
 Producer-specific Processing Functions
-These functions are specific to a Producer's data format and are called via the 'process' function.
-Each function takes the uploaded file as input and creates an UploadedFileBase instance to store the dataframe.
-The Producer functions are decorated with the @formatter decorator, which performs validation and column renaming.
-The functions output the UploadedFileBase.data dataframe after making transformations to it.
 ***************************************************************************************
 """
 

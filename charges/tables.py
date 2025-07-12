@@ -20,9 +20,12 @@ class ChargeScheduleTable(Table):
 
 
 class ChargeTable(Table):
+    charge_type = Column(accessor='schedule.charge_type.name', verbose_name='Charge Type')
+    priority = Column(accessor='schedule.priority', verbose_name='Priority')
     class Meta:
         model = Charge
-        fields = ['charge_type','paying_agent','receiving_agent','total_amount',
-                  'total_gst','outstanding_amount','outstanding_gst', 'priority']
+        sequence = ('charge_type','paying_agent','receiving_agent',
+                  'outstanding_amount','outstanding_gst', 'commission_period', 'priority')
+        exclude = ('schedule','original_charge','id','status')
         orderable = True
 
